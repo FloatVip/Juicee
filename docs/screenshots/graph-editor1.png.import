@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://by7vo6bebcdsn"
-path="res://.godot/imported/graph-editor.png-e9b7b772097e74ddd7f03a84c1e23e65.ctex"
+uid="uid://biwehqka8r08l"
+path="res://.godot/imported/graph-editor1.png-ecb59103cd3bd79fd5e1be145804b109.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/screenshots/graph-editor.png"
-dest_files=["res://.godot/imported/graph-editor.png-e9b7b772097e74ddd7f03a84c1e23e65.ctex"]
+source_file="res://docs/screenshots/graph-editor1.png"
+dest_files=["res://.godot/imported/graph-editor1.png-ecb59103cd3bd79fd5e1be145804b109.ctex"]
 
 [params]
 

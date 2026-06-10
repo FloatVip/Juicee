@@ -82,11 +82,11 @@ func _on_hit(): juicee.play()
 4. Pick effects, tweak sliders, click **▶ Preview Effect**.
 5. Call `juicee.play()` from code.
 
-![JuiceePlayer Inspector UI](docs/screenshots/inspector.png)
+![JuiceePlayer Inspector UI](docs/screenshots/inspector1.png)
 
 ### Visual graph editor
 
-![JuiceGraph visual editor](docs/screenshots/graph-editor.png)
+![JuiceGraph visual editor](docs/screenshots/graph-editor1.png)
 
 1. Open the **JuiceeGraph** bottom panel.
 2. Right-click in the canvas → search the categorized popup ("Screen" / "Camera" / "Object" / "Time" / …).

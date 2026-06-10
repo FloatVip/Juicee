@@ -10,6 +10,10 @@ export_presets.cfg
 project.godot
 icon.svg
 icon.svg.import
+# Scratch .tres / scenes created while dev-testing in the project root.
+/*.tres
+/*.tscn
+/*.gd
 
 # System / IDE
 .DS_Store
@@ -23,3 +27,9 @@ Thumbs.db
 /android/
 /build/
 *.zip
+
+# Local screen recordings — embed showcase videos via GitHub upload
+# (drag into the README web editor / an Issue → user-attachments URL), not the repo.
+*.mp4
+*.mov
+*.webm
