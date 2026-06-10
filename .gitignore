@@ -1,0 +1,25 @@
+# Godot 4+ specific
+.godot/
+*.translation
+export.cfg
+export_presets.cfg
+
+# Host project files. This repo distributes ONLY the addon — if you open this
+# folder as a Godot project (for dev/testing), Godot will auto-create these.
+# They stay local and don't ship with the addon.
+project.godot
+icon.svg
+icon.svg.import
+
+# System / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build artifacts
+/android/
+/build/
+*.zip
