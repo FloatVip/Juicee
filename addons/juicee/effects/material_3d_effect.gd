@@ -29,7 +29,7 @@ extends JuiceeEffect
 func get_category_color() -> Color: return Color(0.22, 0.58, 1.00)
 func get_category_name() -> String: return "Object"
 
-func _apply(context: Node, intensity_mult: float) -> void:
+func _apply(context: Node, _intensity_mult: float) -> void:
 	var mesh: MeshInstance3D = null
 	if not mesh_path.is_empty():
 		mesh = context.get_node_or_null(mesh_path) as MeshInstance3D
@@ -56,7 +56,7 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	tween.tween_method(
 		func(v: Variant) -> void:
 			if is_instance_valid(working_mat): working_mat.set(property_name, v),
-		start, to_value, duration * intensity_mult
+		start, to_value, duration
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await tween.finished
 

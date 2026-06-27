@@ -43,5 +43,6 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		await back.finished
 	else:
 		await tween.finished
-	_release_state(light, "energy")
-	_release_state(light, "color")
+	# return_to_original=false intentionally leaves the light at its flashed state.
+	_release_state(light, "energy", return_to_original)
+	_release_state(light, "color", return_to_original)

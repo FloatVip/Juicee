@@ -36,15 +36,25 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		return
 
 	var prop := "scale"
-	var original: Vector2 = _capture_state(context, prop)
-	var goal := original * target_scale * intensity_mult
+	# Scale from the node's CURRENT value, not the state-stack original, so two
+	# scale effects on the same node compound instead of the second one targeting
+	# where the first already is (and appearing not to move).
+	var start: Vector2 = context.get_indexed(prop)
+	var goal := start * target_scale * intensity_mult
 
 	var tween := _track(context.create_tween())
 	tween.tween_property(context, prop, goal, duration)\
 		.set_trans(transition).set_ease(easing)
+
 	if return_to_original:
+		# Capture the TRUE original via the state stack (so stacked effects all
+		# unwind to it) and tween back; the stack restores it on release.
+		var original: Vector2 = _capture_state(context, prop)
 		tween.tween_property(context, prop, original, return_duration)\
 			.set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
-	await tween.finished
-
-	_release_state(context, prop)
+		await tween.finished
+		_release_state(context, prop)
+	else:
+		# Permanent change — leave it at the goal. No state-stack restore, which
+		# previously snapped the scale back even with return_to_original = false.
+		await tween.finished

@@ -1,12 +1,12 @@
-# Juicee — Effects Reference (90 effects)
+# Juicee — Effects Reference (94 effects)
 
-All 90 effects organized by category. Every `@export` parameter is documented. For base-class params (`chance`, `delay`, `intensity_min/max`, `cooldown`) see [api-reference.md](api-reference.md).
+All 94 effects organized by category. Every `@export` parameter is documented. For base-class params (`chance`, `delay`, `intensity_min/max`, `cooldown`) see [api-reference.md](api-reference.md).
 
 **Accessibility tags** are noted where relevant — see `JuiceeAccessibility` in [api-reference.md](api-reference.md).
 
 ---
 
-## Screen (17 effects)
+## Screen (18 effects)
 
 Screen effects render on a `CanvasLayer` above everything else. Shader-based effects use `SCREEN_TEXTURE` and require **Forward Plus or Mobile renderer**. The Compatibility renderer does not support `hint_screen_texture`.
 
@@ -214,6 +214,24 @@ CRT scanline overlay with optional scroll. Retro monitors, broken screens, hacke
 
 ---
 
+### JuiceeSpeedLinesEffect
+
+Anime radial speed-lines overlay — streaks converging on the screen centre. Dashes, bursts of speed, focus and shock moments. *(New in 1.2.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `density` | `float` | `140.0` | Angular streak count (20–400). Higher = more, thinner lines. |
+| `strength` | `float` | `0.5` | Peak streak opacity (0–1). |
+| `center_clear` | `float` | `0.35` | Radius (0–0.9) of the clear centre with no lines over the focal point. |
+| `line_color` | `Color` | `Color.WHITE` | Streak colour. White = speed, black = shock/focus. |
+| `anim_speed` | `float` | `6.0` | Streak shimmer rate (0 = static). |
+| `duration` | `float` | `0.4` | Duration. |
+| `fade_out` | `bool` | `true` | Fade effect out at the end. |
+
+**Shader:** `addons/juicee/shaders/speed_lines.gdshader`
+
+---
+
 ### JuiceeFilmGrainEffect
 
 Analog film grain noise overlay. Grain is quantized to `speed` FPS for authentic flutter rather than per-frame smooth noise.
@@ -417,7 +435,7 @@ Dutch tilt — rotate Camera2D to `angle_degrees` then spring back. Three phases
 
 ---
 
-## Object (34 effects)
+## Object (36 effects)
 
 Object effects target the context node directly (Node2D, CanvasItem, Control, Light2D, RigidBody2D). Most use `JuiceeStateStack` to handle concurrent safety.
 
@@ -664,6 +682,8 @@ Cycles `modulate` through the HSV hue wheel. Rainbow powerup, party mode, boss p
 | `duration` | `float` | `1.5` | Duration. |
 | `saturation` | `float` | `1.0` | Color saturation. |
 | `value` | `float` | `1.0` | Color value (brightness). |
+| `preserve_alpha` | `bool` | `true` | Keep the original modulate alpha (else fully opaque). |
+| `loop` | `bool` | `false` | Cycle forever until `stop()` — persistent "RAINBOW MODE". `duration` still sets cycle speed. |
 
 ---
 
@@ -900,6 +920,35 @@ Animate any property on a `MeshInstance3D`'s surface material. **Duplicates the 
 
 ---
 
+### JuiceeImpactRingEffect
+
+Expanding ring + radiating "POW" spikes drawn at a Node2D in world-space (`Line2D`, no shaders). Crits, parries, big landings, small explosions. Distinct from the full-screen shader `JuiceeShockwaveEffect` — this geometry sits on the object. *(New in 1.2.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `radius` | `float` | `42.0` | Ring radius in pixels at full scale. |
+| `expand` | `float` | `2.4` | Final scale the flourish expands to. |
+| `ring_width` | `float` | `5.0` | Ring line thickness in pixels. |
+| `color` | `Color` | `(1, 0.85, 0.3)` | Ring + spike colour. |
+| `spikes` | `int` | `8` | Radiating spike count (0 = ring only). |
+| `spike_length` | `float` | `26.0` | How far each spike extends past the ring. |
+| `duration` | `float` | `0.36` | Expand + fade duration. |
+
+---
+
+### JuiceeSwayEffect
+
+Smooth pendulum rotation driven by a sine wave. Unlike `JuiceeWiggleEffect` (random jitter) or `JuiceeSpinEffect` (full revolution), it's a soft looping tilt. Idle "alive" UI, hanging signs, floating pickups, breathing titles. Works on Node2D and Control. *(New in 1.2.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `angle` | `float` | `6.0` | Peak sway angle to each side, in degrees. |
+| `period` | `float` | `1.2` | Seconds for one full left→right→left cycle. |
+| `cycles` | `float` | `2.0` | Full cycles to run. `0` = sway forever (until `stop()`). |
+| `center_pivot` | `bool` | `true` | For Control targets, rotate around the centre instead of the corner. |
+
+---
+
 ## Text (6 effects)
 
 Text effects target `Label`, `RichTextLabel`, or `Control` nodes.
@@ -1047,7 +1096,7 @@ Pure wait — `apply()` awaits a timer then returns. Useful for sequencing in a 
 
 ---
 
-## Audio (5 effects)
+## Audio (7 effects)
 
 Audio effects target audio buses or spawn temporary `AudioStreamPlayer` nodes. They work in both 2D and 3D scenes.
 
@@ -1119,6 +1168,20 @@ Temporarily injects an `AudioEffectPitchShift` on an audio bus. Underwater, slow
 | `duration` | `float` | `1.0` | Duration. |
 | `ramp_in` | `float` | `0.2` | Seconds to ramp from `1.0` to `target_pitch`. |
 | `ramp_out` | `float` | `0.3` | Seconds to return to `1.0`. |
+
+---
+
+### JuiceeLowPassEffect
+
+Ramps a temporary `AudioEffectLowPassFilter` on an audio bus from fully open down to `target_cutoff` and back — the muffled-on-hit, underwater, stunned/concussed, behind-a-wall feel. Pairs perfectly with Hit Stop. *(New in 1.2.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `bus_name` | `String` | `"Master"` | Target audio bus. |
+| `target_cutoff` | `float` | `500.0` | Cutoff (Hz) at full muffle. Lower = more muffled (≈500 = "behind a wall"). |
+| `duration` | `float` | `0.6` | Total duration: ramp-in + hold + ramp-out. |
+| `ramp_in_fraction` | `float` | `0.15` | Fraction of duration spent muffling. |
+| `ramp_out_fraction` | `float` | `0.35` | Fraction of duration spent opening back up. |
 
 ---
 

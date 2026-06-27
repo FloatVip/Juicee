@@ -43,9 +43,14 @@ func _chain(data: JuiceeGraphNodeData, resource: JuiceeGraphResource, context: N
 
 	match data.type:
 		"split":
-			# Parallel fan-out: all outputs run concurrently.
+			# Parallel fan-out: all outputs run concurrently, but we WAIT for every
+			# branch to finish before returning — otherwise the runner (and any nodes
+			# chained after a branch) can be freed mid-flight, cutting the branch off.
+			var remaining := [nexts.size()]
 			for next in nexts:
-				_chain(next, resource, context)
+				_run_branch(next, resource, context, remaining)
+			while remaining[0] > 0:
+				await get_tree().process_frame
 		"random":
 			# Pick one output based on weights.
 			var weights: Array = data.properties.get("weights", [])
@@ -74,6 +79,12 @@ func _chain(data: JuiceeGraphNodeData, resource: JuiceeGraphResource, context: N
 				await _chain(nexts[port], resource, context)
 		_:
 			await _chain(nexts[0], resource, context)
+
+# Runs one Split branch to completion, then marks it done (remaining is a 1-element
+# array used as a shared mutable counter so the Split can join on all branches).
+func _run_branch(data: JuiceeGraphNodeData, resource: JuiceeGraphResource, context: Node, remaining: Array) -> void:
+	await _chain(data, resource, context)
+	remaining[0] -= 1
 
 # Polymorphic execution — Effects call their .apply(); flow nodes are pure topology.
 func _execute(data: JuiceeGraphNodeData, context: Node) -> void:

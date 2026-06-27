@@ -173,14 +173,22 @@ Effect instances are embedded in the `.tres` as inline sub-resources. Their `@ex
 
 ---
 
-## Popup search
+## Add-node popup
 
-Right-clicking the canvas opens a categorized popup. Effects are grouped by category:
+Right-clicking the canvas opens the add-node popup. Effects are grouped by category:
 
 - Screen, Camera, Object, Text, Time, Audio, Physics, Flow, Misc
-- Flow control nodes (Trigger, Split, Loop, Random, Condition) appear at the top in a dedicated section
+- Flow control nodes (Trigger, Split, Loop, Random, Condition, Comment) appear at the top in a dedicated section
 
-The popup has a **search field** — type any substring to filter effects. The matched section headers are hidden if all their effects are filtered out.
+### Browse by collapsible category
+
+Each category is a **click-to-fold header** with a `▸` (collapsed) / `▾` (expanded) arrow — expand just the one you want instead of scrolling the whole list. *Flow control* starts expanded and the effect categories start collapsed; the expanded state persists for the rest of the editor session.
+
+### Or fuzzy-search
+
+Type in the **search field** to filter across every effect at once (label, description, and category are all searched). Results are ranked best-first — prefix matches beat substring matches beat loose typo-matches — and the matched characters are **bolded** so you can see why each one matched. `shke` finds Shake, `filmgr` finds Film Grain. Searching overrides the folds (matches show regardless of which categories are collapsed); clearing the box returns to the folded category view.
+
+Full keyboard flow: type to filter, **↑/↓** to move the highlight (only over visible rows), **Enter** to drop the top match — no mouse needed.
 
 Effects that override `get_category_name()` in their script appear under their own custom category. Unknown effects fall through to the "Misc" section.
 

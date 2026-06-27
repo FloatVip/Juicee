@@ -38,4 +38,12 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		await tree.create_timer(step, true, false, false).timeout
 		elapsed += step
 
+	# Ease smoothly back to rest — a high-impulse spring may still be oscillating
+	# when `duration` elapses, and the state-stack restore would otherwise snap it.
+	if is_instance_valid(target) and not _cancelled:
+		var settle := _track(target.create_tween())
+		settle.tween_property(target, "scale", original_scale, 0.12)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		await settle.finished
+
 	_release_state(target, "scale")

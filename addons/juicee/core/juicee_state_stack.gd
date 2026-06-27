@@ -42,7 +42,9 @@ static func capture(target: Object, property: String) -> Variant:
 
 ## Decrements the ref count. When it reaches 0, restores the original and clears state.
 ## Safe to call even if target was freed — stale entries are pruned automatically.
-static func release(target: Object, property: String) -> void:
+## Pass restore=false to drop the capture WITHOUT restoring — for effects that
+## intentionally leave a permanent change (return_to_original=false / hold_at_end).
+static func release(target: Object, property: String, restore: bool = true) -> void:
 	if not is_instance_valid(target):
 		# Target gone mid-effect — sweep any stale entries referencing dead instances.
 		_prune_stale()
@@ -53,7 +55,8 @@ static func release(target: Object, property: String) -> void:
 	var entry: Dictionary = _state[key]
 	entry["refs"] = (entry["refs"] as int) - 1
 	if entry["refs"] <= 0:
-		target.set_indexed(property, entry["original"])
+		if restore:
+			target.set_indexed(property, entry["original"])
 		_state.erase(key)
 
 ## Removes entries whose target object is no longer valid (freed mid-effect).

@@ -56,7 +56,8 @@ func _apply(context: Node, _intensity_mult: float) -> void:
 		await tween.finished
 		await context.get_tree().create_timer(duration * 0.7, true, false, false).timeout
 
-	if is_instance_valid(layer):
+	# fade_out=false means "holds at target values" — keep the overlay alive.
+	if fade_out and is_instance_valid(layer):
 		layer.queue_free()
 
 func _set_param(value: float, mat: ShaderMaterial, param: String) -> void:

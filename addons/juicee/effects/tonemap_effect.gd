@@ -59,20 +59,26 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 		await back.finished
 
-	_restore(env, orig_exposure, orig_white)
+	# fade_out=false means "stays punched" — release WITHOUT restoring so it persists.
+	_restore(env, orig_exposure, orig_white, fade_out)
 
-func _restore(env: Environment, orig_exposure: float, orig_white: float) -> void:
-	if is_instance_valid(env):
+func _restore(env: Environment, orig_exposure: float, orig_white: float, restore: bool = true) -> void:
+	if restore and is_instance_valid(env):
 		env.tonemap_exposure = orig_exposure
 		env.tonemap_white = orig_white
-	_release_state(env, "tonemap_exposure")
-	_release_state(env, "tonemap_white")
+	_release_state(env, "tonemap_exposure", restore)
+	_release_state(env, "tonemap_white", restore)
 
 func _find_active_environment(context: Node) -> Environment:
-	var root: Node = context.get_tree().current_scene if context.get_tree() else context
+	var tree := context.get_tree()
+	var root: Node = tree.current_scene if tree else context
+	if not root:  # current_scene is null in autoload / added-to-root contexts
+		root = context
 	return _scan_for_env(root)
 
 func _scan_for_env(node: Node) -> Environment:
+	if node == null:
+		return null
 	if node is WorldEnvironment:
 		var we := node as WorldEnvironment
 		if we.environment:

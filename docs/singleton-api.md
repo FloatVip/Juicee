@@ -301,10 +301,31 @@ func color_cycle(
     target: CanvasItem,
     cycles: float = 2.0,
     duration: float = 1.5,
-    saturation: float = 1.0
+    saturation: float = 1.0,
+    loop: bool = false
 ) -> void
 ```
-Hue cycle on modulate. Rainbow powerup, party mode.
+Hue cycle on modulate. Rainbow powerup, party mode. `loop = true` runs until `stop()` (persistent RAINBOW MODE).
+
+```gdscript
+func impact_ring(
+    target: Node2D,
+    color: Color = Color(1.0, 0.85, 0.3),
+    spikes: int = 8,
+    radius: float = 42.0
+) -> void
+```
+Expanding ring + radiating "POW" spikes drawn on the node (Line2D, no shaders). Crits, parries, explosions.
+
+```gdscript
+func sway(
+    target: Node,
+    angle: float = 6.0,
+    period: float = 1.2,
+    cycles: float = 0.0
+) -> void
+```
+Smooth pendulum rotation sway. `cycles = 0` sways forever (until `stop()`). Idle UI, hanging signs, breathing titles.
 
 ```gdscript
 func ambient_flash(
@@ -461,6 +482,17 @@ func scan_lines(
 CRT scanline overlay.
 
 ```gdscript
+func speed_lines(
+    context: Node,
+    strength: float = 0.5,
+    duration: float = 0.4,
+    color: Color = Color.WHITE,
+    density: float = 140.0
+) -> void
+```
+Anime radial speed-lines overlay (dashes, speed bursts, focus/shock moments).
+
+```gdscript
 func film_grain(
     context: Node,
     grain_strength: float = 0.12,
@@ -546,6 +578,16 @@ func pitch_shift(
 ) -> void
 ```
 Temporary pitch shift on an audio bus.
+
+```gdscript
+func low_pass(
+    context: Node,
+    target_cutoff: float = 500.0,
+    bus: String = "Master",
+    duration: float = 0.6
+) -> void
+```
+Temporary low-pass ("muffle") on an audio bus — muffled-on-hit, underwater, stunned.
 
 ---
 

@@ -47,6 +47,10 @@ func _apply(context: Node, _intensity_mult: float) -> void:
 				child.finished.connect(func() -> void: done_count[0] += 1, CONNECT_ONE_SHOT)
 			# Fire without await — each coroutine starts concurrently.
 			child.apply(context, _runtime_params)
+			# A child blocked by chance/cooldown/accessibility returns synchronously
+			# and never emits `finished` — tally it now so the join can't wait forever.
+			if wait_for_finish and not child.is_busy():
+				done_count[0] += 1
 		if wait_for_finish and tree:
 			while done_count[0] < total and not _cancelled and is_instance_valid(context):
 				await tree.process_frame

@@ -41,10 +41,10 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			Mode.IMPULSE:
 				rb.apply_impulse(f2, at_position)
 			Mode.CONSTANT_FORCE:
-				rb.apply_force(f2)
+				rb.constant_force += f2   # persists every physics step (apply_force lasts 1 frame)
 				await context.get_tree().create_timer(duration, true, false, false).timeout
 				if clear_force_on_end and is_instance_valid(rb):
-					rb.apply_force(-f2)
+					rb.constant_force -= f2
 			Mode.TORQUE_IMPULSE:
 				rb.apply_torque_impulse(f2.x)
 
@@ -54,10 +54,10 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			Mode.IMPULSE:
 				rb.apply_central_impulse(f3)
 			Mode.CONSTANT_FORCE:
-				rb.apply_central_force(f3)
+				rb.constant_force += f3   # persists every physics step (apply_central_force lasts 1 frame)
 				await context.get_tree().create_timer(duration, true, false, false).timeout
 				if clear_force_on_end and is_instance_valid(rb):
-					rb.apply_central_force(-f3)
+					rb.constant_force -= f3
 			Mode.TORQUE_IMPULSE:
 				rb.apply_torque_impulse(f3)
 	else:

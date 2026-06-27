@@ -19,6 +19,8 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	if not body:
 		push_warning("JuiceeImpulseEffect: target is not a RigidBody2D")
 		return
+	if not body.is_inside_tree():
+		return
 
 	var effective_impulse := impulse * intensity_mult
 	if random_cone_degrees > 0.0:

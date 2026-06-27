@@ -18,8 +18,8 @@ func get_category_color() -> Color:
 
 func _apply(context: Node, intensity_mult: float) -> void:
 	var target: CanvasItem = context as CanvasItem
-	if not target:
-		push_warning("JuiceeModulateEffect: context is not a CanvasItem")
+	if not target or not target.is_inside_tree():
+		push_warning("JuiceeModulateEffect: context is not a CanvasItem in the tree")
 		return
 
 	var original: Color = _capture_state(target, "modulate")
@@ -36,4 +36,5 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			.set_trans(trans_type).set_ease(ease_type)
 
 	await tween.finished
-	_release_state(target, "modulate")
+	# return_to_original=false intentionally leaves the modulate changed — don't restore.
+	_release_state(target, "modulate", return_to_original)

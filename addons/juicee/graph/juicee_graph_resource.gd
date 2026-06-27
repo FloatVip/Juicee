@@ -47,14 +47,21 @@ func find_trigger() -> JuiceeGraphNodeData:
 			return n
 	return null
 
+## Next nodes wired from from_id, ORDERED BY OUTPUT PORT (not connection-insertion
+## order). Condition maps port 0 = true / port 1 = false, and Random's weights are
+## indexed per port, so the result must be port-ordered or those branch the wrong way.
 func get_next(from_id: String) -> Array[JuiceeGraphNodeData]:
-	var result: Array[JuiceeGraphNodeData] = []
+	var matches: Array = []  # [from_port:int, node]
 	for c in connections:
 		var p := c.split(":")
-		if p[0] == from_id:
+		if p.size() >= 3 and p[0] == from_id:
 			var next := find_node(p[2])
 			if next:
-				result.append(next)
+				matches.append([int(p[1]), next])
+	matches.sort_custom(func(a, b) -> bool: return a[0] < b[0])
+	var result: Array[JuiceeGraphNodeData] = []
+	for m in matches:
+		result.append(m[1])
 	return result
 
 ## Walks the graph from Trigger and produces a JuiceeSequence.

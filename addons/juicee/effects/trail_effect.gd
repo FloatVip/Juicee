@@ -27,7 +27,10 @@ func _apply(context: Node, _intensity_mult: float) -> void:
 		return
 
 	var tree := target.get_tree()
-	var scene_root := tree.current_scene
+	# current_scene is null in autoload / added-to-root contexts — fall back to target.
+	var scene_root: Node = tree.current_scene
+	if not scene_root:
+		scene_root = target
 	var ghosts: Array[Sprite2D] = []
 	var elapsed: float = 0.0
 

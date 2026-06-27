@@ -14,6 +14,12 @@ icon.svg.import
 /*.tres
 /*.tscn
 /*.gd
+# C# bridge ships as addons/juicee/csharp/Juicee.cs; the root .csproj/.sln are
+# created only when you open this folder to test C# locally — they don't ship.
+/*.csproj
+/*.sln
+/obj/
+/bin/
 
 # Internal working files (roadmap, notes, scratch)
 /temp/

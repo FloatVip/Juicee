@@ -23,12 +23,18 @@ extends JuiceeEffect
 @export var crit_color: Color = Color(1.0, 0.85, 0.20, 1.0)
 ## How far up the number floats (pixels) before fading away.
 @export_range(0.0, 300.0, 1.0) var rise_distance: float = 80.0
+## Horizontal weave amplitude (px) while floating, so the number drifts gently
+## instead of sliding straight up. 0 = dead-straight rise.
+@export_range(0.0, 40.0, 0.5) var float_sway: float = 5.0
 ## Random horizontal offset spread so overlapping hits don't stack perfectly.
 @export_range(0.0, 100.0, 1.0) var spread: float = 40.0
 ## Font size in pixels for normal hits.
 @export_range(8, 128, 1) var font_size: int = 28
 ## Multiplier for crit font_size (so crits feel bigger).
 @export_range(1.0, 3.0, 0.1) var crit_size_multiplier: float = 1.5
+## Rotation shake amplitude (degrees) on crit spawn — makes big hits feel violent.
+## Decays to zero over a few quick wobbles. 0 = off. Only applies to crits.
+@export_range(0.0, 30.0, 0.5) var crit_shake: float = 9.0
 ## Optional custom font. Leave null to use the project's default UI font.
 @export var font: Font
 ## Total animation duration (rise + fade).
@@ -68,6 +74,10 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Hidden until positioned: a Control spawns at (0,0) and we only know its size
+	# (needed to center it) after one frame — without this it flashes in the
+	# top-left corner for a frame before snapping to the target.
+	label.visible = false
 
 	# Parent into the active scene so the label exists in world space.
 	# Spawning under the target itself would inherit any local transforms we
@@ -85,24 +95,49 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	var spread_offset := randf_range(-spread, spread) * 0.5
 	var start_pos := target.global_position + Vector2(spread_offset, 0) - label.size * 0.5
 	label.global_position = start_pos
+	label.visible = true
 
-	# Parallel tween: rise + fade.
-	var end_pos := start_pos + Vector2(0, -rise_distance * intensity_mult)
-	var tween := _track(label.create_tween()).set_parallel(true)
-	tween.tween_property(label, "global_position", end_pos, duration)\
-		.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, "modulate:a", 0.0, duration * 0.7).set_delay(duration * 0.3)
+	var st := target.get_tree()
+	var end_y := start_pos.y - rise_distance * intensity_mult
 
 	# Crit scale-punch at the start so big hits feel weighty.
 	if is_crit:
 		label.pivot_offset = label.size * 0.5
 		label.scale = Vector2(0.5, 0.5)
-		var punch := _track(label.create_tween())
+		# Label-owned (untracked) tweens: each spawned number animates independently, so
+		# re-triggering the effect mid-flight doesn't kill a previous number's punch
+		# (issue #4 — they must stack as separate instances, not cancel each other).
+		var punch := label.create_tween()
 		punch.tween_property(label, "scale", Vector2.ONE * 1.2, 0.12)\
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		punch.tween_property(label, "scale", Vector2.ONE, 0.15)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
-	await tween.finished
+		# Rotation shake — a few quick alternating wobbles that decay to zero. Runs
+		# in parallel with the punch/rise; rotation pivots around the centre.
+		if crit_shake > 0.0:
+			var shake := label.create_tween()
+			var amp: float = deg_to_rad(crit_shake)
+			for i in 5:
+				var dir: float = 1.0 if i % 2 == 0 else -1.0
+				shake.tween_property(label, "rotation", amp * dir * (1.0 - i / 5.0), 0.045)\
+					.set_trans(Tween.TRANS_SINE)
+			shake.tween_property(label, "rotation", 0.0, 0.045).set_trans(Tween.TRANS_SINE)
+
+	# Float upward with a gentle horizontal weave + fade, driven per-frame rather than
+	# a straight position tween — otherwise the number slides up in a dead straight line
+	# and looks lifeless while it hangs. Scale/rotation stay free for the crit punch.
+	var phase := randf() * TAU
+	var t := 0.0
+	while t < duration and is_instance_valid(label) and not _cancelled:
+		var k: float = t / duration
+		var rise_k: float = 1.0 - pow(1.0 - k, 4.0)                       # quart ease-out
+		var weave: float = sin(phase + k * TAU * 2.5) * float_sway * (1.0 - 0.4 * k)
+		label.global_position = Vector2(start_pos.x + weave, lerpf(start_pos.y, end_y, rise_k))
+		if k > 0.3:
+			label.modulate.a = clampf(1.0 - (k - 0.3) / 0.7, 0.0, 1.0)
+		await st.process_frame
+		t += st.root.get_process_delta_time()
+
 	if is_instance_valid(label):
 		label.queue_free()

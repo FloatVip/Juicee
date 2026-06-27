@@ -48,5 +48,6 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			1.0, 0.0, fade)
 	await tween.finished
 
-	if is_instance_valid(layer):
+	# fade_out=false means the distortion holds — keep the overlay alive instead of freeing it.
+	if fade_out and is_instance_valid(layer):
 		layer.queue_free()

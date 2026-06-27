@@ -29,24 +29,22 @@ func get_category_name() -> String:
 func _apply(context: Node, _intensity_mult: float) -> void:
 	if not context or not context.is_inside_tree():
 		return
-	var target: CanvasItem = context.get_node_or_null(target_path) as CanvasItem
-	# CanvasItem covers Node2D + Control; fall back to plain Node for Node3D etc.
-	if not target:
-		var generic: Node = context.get_node_or_null(target_path)
-		if generic and "visible" in generic:
-			target = generic
-		else:
-			push_warning("JuiceeSetActiveEffect: target '%s' not found / not visibility-toggleable" % str(target_path))
-			return
+	# Typed as Node (not CanvasItem) so it covers Node2D, Control AND Node3D — anything
+	# with a `visible` property. Access via get()/set() since `visible` isn't a member
+	# of the Node base type. (Typing this CanvasItem crashed on Node3D targets.)
+	var target: Node = context.get_node_or_null(target_path)
+	if not target or not ("visible" in target):
+		push_warning("JuiceeSetActiveEffect: target '%s' not found / not visibility-toggleable" % str(target_path))
+		return
 
-	var original_visible: bool = target.visible
+	var original_visible: bool = target.get("visible")
 	var new_visible: bool
 	match action:
 		Action.SHOW:   new_visible = true
 		Action.HIDE:   new_visible = false
 		Action.TOGGLE: new_visible = not original_visible
 
-	target.visible = new_visible
+	target.set("visible", new_visible)
 
 	var tree := context.get_tree()
 	if not tree:
@@ -56,4 +54,4 @@ func _apply(context: Node, _intensity_mult: float) -> void:
 	if _cancelled or not is_instance_valid(target):
 		return
 	if restore_on_end:
-		target.visible = original_visible
+		target.set("visible", original_visible)

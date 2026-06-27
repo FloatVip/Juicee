@@ -43,4 +43,5 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			.set_trans(trans_type).set_ease(ease_type)
 
 	await tween.finished
-	_release_state(target, "position")
+	# return_to_original=false intentionally leaves the position changed — don't restore.
+	_release_state(target, "position", return_to_original)

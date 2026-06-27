@@ -68,6 +68,27 @@ var _gen: int = 0
 
 ## Entry point used by JuiceeSequence — handles cooldown/chance/delay/intensity,
 ## then calls _apply() and emits signals. Do NOT override; override `_apply()`.
+## Fire-and-forget callers (the Juicee.* singleton) drop their local reference the
+## moment apply() suspends. Tween-based effects survive (the tween lives on the
+## target node), but coroutine-loop effects (jiggle, screen overlays) animate
+## manually and would be garbage-collected mid-play. Holding a strong ref here for
+## the duration of the play keeps them alive.
+static var _alive: Array = []
+func _alive_keep() -> void:
+	if not _alive.has(self):
+		_alive.append(self)
+func _alive_drop() -> void:
+	_alive.erase(self)
+
+## Cleanup callbacks run by stop(). A killed tween never resumes `await
+## tween.finished`, so any cleanup an effect does AFTER that await (freeing a
+## spawned overlay, removing an audio-bus effect) is skipped on stop(). Effects
+## that hold such non-state-stack resources register a callback here; stop() runs
+## them. State-stack restores are handled separately by stop() and need no callback.
+var _stop_cleanup: Array[Callable] = []
+func _on_stop(cb: Callable) -> void:
+	_stop_cleanup.append(cb)
+
 func apply(context: Node, params: Dictionary = {}) -> void:
 	# Bump generation FIRST so any in-flight coroutine (mid-delay or mid-_apply)
 	# will see a stale snapshot and bail out without finishing.
@@ -84,6 +105,7 @@ func apply(context: Node, params: Dictionary = {}) -> void:
 	for entry in _state_captures:
 		JuiceeStateStack.release(entry[0], entry[1])
 	_state_captures.clear()
+	_stop_cleanup.clear()
 	_active = false
 	_pending_start = true
 	_cancelled = false
@@ -99,14 +121,21 @@ func apply(context: Node, params: Dictionary = {}) -> void:
 	if chance < 1.0 and randf() > chance:
 		_pending_start = false
 		return
+
+	# From here on the coroutine may suspend (delay / _apply) after the caller has
+	# returned — keep this effect alive across the play so the GC can't reap it.
+	_alive_keep()
+
 	if delay > 0.0:
 		if not context or not context.is_inside_tree():
 			_pending_start = false
+			_alive_drop()
 			return
 		delay_started.emit(delay)
 		await context.get_tree().create_timer(delay, true, false, false).timeout
 		if my_gen != _gen:
 			_pending_start = false
+			_alive_drop()
 			return  # superseded by a later apply() or stop()
 	var mult: float = 1.0
 	if intensity_min != 1.0 or intensity_max != 1.0:
@@ -115,6 +144,7 @@ func apply(context: Node, params: Dictionary = {}) -> void:
 	mult *= accessibility.effective_multiplier(get_accessibility_tag())
 	if mult <= 0.0:
 		_pending_start = false
+		_alive_drop()
 		return
 
 	_pending_start = false
@@ -122,6 +152,10 @@ func apply(context: Node, params: Dictionary = {}) -> void:
 	_active = true
 	started.emit()
 	await _apply(context, mult)
+	_alive_drop()
+	# _apply finished naturally, so it already ran its own cleanup — drop the stop
+	# callbacks so a later stray stop() can't double-free.
+	_stop_cleanup.clear()
 	if my_gen != _gen:
 		return  # superseded mid-_apply — the newer call owns state now
 	_active = false
@@ -164,11 +198,13 @@ func _capture_state(target: Object, property: String) -> Variant:
 ## Release a previously captured property. Removes the entry from _state_captures
 ## so stop() doesn't double-release it — loop-based effects MUST use this instead
 ## of calling JuiceeStateStack.release() directly.
-func _release_state(target: Object, property: String) -> void:
+## Pass restore=false to keep the property at its current value instead of restoring
+## the captured original — for effects that intentionally leave a permanent change.
+func _release_state(target: Object, property: String, restore: bool = true) -> void:
 	for i in _state_captures.size():
 		if _state_captures[i][0] == target and _state_captures[i][1] == property:
 			_state_captures.remove_at(i)
-			JuiceeStateStack.release(target, property)
+			JuiceeStateStack.release(target, property, restore)
 			return
 	# Entry not found — stop() already released it. No-op is correct.
 
@@ -217,6 +253,10 @@ func _spawn_screen_shader_overlay(context: Node, layer_name: StringName, z: int 
 	layer.name = layer_name
 	layer.layer = z
 	context.add_child(layer)
+	# Freed by stop() — without this a killed tween leaves the overlay stuck on screen.
+	_on_stop(func() -> void:
+		if is_instance_valid(layer):
+			layer.queue_free())
 
 	var bb := BackBufferCopy.new()
 	bb.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
@@ -241,6 +281,10 @@ func _spawn_screen_solid_overlay(context: Node, layer_name: StringName, z: int =
 	layer.name = layer_name
 	layer.layer = z
 	context.add_child(layer)
+	# Freed by stop() — without this a killed tween leaves the overlay stuck on screen.
+	_on_stop(func() -> void:
+		if is_instance_valid(layer):
+			layer.queue_free())
 
 	var rect := ColorRect.new()
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -384,10 +428,27 @@ func stop() -> void:
 	for entry in _state_captures:
 		JuiceeStateStack.release(entry[0], entry[1])
 	_state_captures.clear()
+	# Run resource-cleanup callbacks (free spawned overlays, remove bus effects) that
+	# the effect's own post-await code would otherwise never reach — its `await
+	# tween.finished` hangs forever once we kill the tween above.
+	for cb in _stop_cleanup:
+		if cb.is_valid():
+			cb.call()
+	_stop_cleanup.clear()
+	# Drop the strong ref that kept this effect alive across the (now-killed) play, so
+	# the zombie coroutine left hanging on the dead tween's `finished` doesn't pin the
+	# effect + its captured context in the static _alive array forever.
+	_alive_drop()
 
 ## Returns true if this effect is currently mid-apply (between started/finished).
 func is_playing() -> bool:
 	return _active
+
+## True if the effect is playing OR still pending (in its pre-delay / pre-start window).
+## Distinct from is_playing() which is false during the delay. Composite effects use
+## this to tell "still going" from "bailed synchronously (chance/cooldown/silenced)".
+func is_busy() -> bool:
+	return _active or _pending_start
 
 ## Time remaining (in seconds) before the cooldown expires, or 0.0 if ready to fire.
 func cooldown_remaining() -> float:

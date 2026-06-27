@@ -17,6 +17,10 @@ extends JuiceeEffect
 @export_range(0.0, 2.0, 0.01) var value: float = 1.0
 ## If true, alpha is preserved from the original modulate. If false, fully opaque.
 @export var preserve_alpha: bool = true
+## If true, cycle forever (until stop()). `duration` still sets the cycle SPEED
+## (cycles per duration), it just no longer ends the effect. Great for a persistent
+## "RAINBOW MODE" glow on a title, powerup, or victory banner.
+@export var loop: bool = false
 
 func get_category_color() -> Color:
 	return Color(0.22, 0.58, 1.00)
@@ -38,7 +42,7 @@ func _apply(context: Node, intensity_mult: float) -> void:
 
 	var elapsed := 0.0
 	var effective_sat: float = clamp(saturation * intensity_mult, 0.0, 1.0)
-	while elapsed < duration and not _cancelled and is_instance_valid(target):
+	while (loop or elapsed < duration) and not _cancelled and is_instance_valid(target):
 		var hue: float = fposmod(elapsed / duration * cycles, 1.0)
 		var c := Color.from_hsv(hue, effective_sat, value, 1.0)
 		if preserve_alpha:

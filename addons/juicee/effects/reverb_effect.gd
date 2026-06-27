@@ -49,6 +49,12 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	# Add to the END of the bus's effect chain so it processes last.
 	AudioServer.add_bus_effect(bus_idx, reverb)
 	var our_slot: int = AudioServer.get_bus_effect_count(bus_idx) - 1
+	# stop() removes our reverb — the killed tween's `await` would otherwise skip the
+	# removal below and leave the reverb on the bus forever.
+	_on_stop(func() -> void:
+		if AudioServer.get_bus_index(bus_name) >= 0 \
+				and AudioServer.get_bus_effect_count(bus_idx) > our_slot:
+			AudioServer.remove_bus_effect(bus_idx, our_slot))
 
 	var effective_wet: float = peak_wet * intensity_mult
 

@@ -43,6 +43,9 @@ var _log_lines:        Array[String] = []
 # Pending content — stored while show-delay timer is counting down.
 var _pending_show: Callable = Callable()
 var _pending_rect:  Rect2 = Rect2()
+## Live source block — its rect is re-queried at show time so a scroll/zoom during
+## the show-delay can never strand the panel at a stale (off-screen) position.
+var _pending_node:  Control = null
 
 const _NO_PREVIEW := ["Time", "Flow", "Physics", "Audio"]
 
@@ -308,7 +311,7 @@ func _hsep() -> HSeparator:
 # ─── Public API ───────────────────────────────────────────────────────────────
 
 ## Show the panel for a JuiceeEffect (graph block or inspector card).
-func show_for_effect(effect: JuiceeEffect, src_global_rect: Rect2) -> void:
+func show_for_effect(effect: JuiceeEffect, src_node: Control) -> void:
 	if not is_instance_valid(effect):
 		return
 	_clear_log()
@@ -347,23 +350,13 @@ func show_for_effect(effect: JuiceeEffect, src_global_rect: Rect2) -> void:
 		_no_preview_label.hide()
 		_preview_container.show()
 		_start_preview(eff, cat)
-	_pending_rect = src_global_rect
-
-	if visible:
-		# Already showing — update content AND move to the new block without
-		# re-delay. Cancel any hide queued when the mouse left the previous block,
-		# otherwise the panel fades out ~0.15 s after switching blocks.
-		_stop_anim()
-		_hide_timer.stop()
-		_pending_show.call()
-		_position_near(_pending_rect)
-		_fade_in()
-	else:
-		_show_delay_timer.start()
+	_pending_node = src_node
+	_pending_rect = src_node.get_global_rect() if is_instance_valid(src_node) else Rect2()
+	_arm_show()
 
 ## Show the panel for a built-in block (Trigger, Loop, Split, etc.).
 func show_for_builtin(title: String, category: String, desc: String,
-		accent: Color, src_global_rect: Rect2) -> void:
+		accent: Color, src_node: Control) -> void:
 	_clear_log()
 	var t := title; var c := category; var d := desc; var a := accent
 	_pending_show = func() -> void:
@@ -375,16 +368,18 @@ func show_for_builtin(title: String, category: String, desc: String,
 		_preview_container.hide()
 		_no_preview_label.text = "Built-in flow control"
 		_no_preview_label.show()
-	_pending_rect = src_global_rect
+	_pending_node = src_node
+	_pending_rect = src_node.get_global_rect() if is_instance_valid(src_node) else Rect2()
+	_arm_show()
 
+## Always re-arm the show delay. If a panel is already up (moving between blocks),
+## drop it first so it visibly disappears before reappearing on the new block —
+## there's always a fresh timer, never an instant content swap.
+func _arm_show() -> void:
+	_hide_timer.stop()
 	if visible:
-		_stop_anim()
-		_hide_timer.stop()
-		_pending_show.call()
-		_position_near(_pending_rect)
-		_fade_in()
-	else:
-		_show_delay_timer.start()
+		force_hide()
+	_show_delay_timer.start()
 
 ## Add a timestamped entry to the Output log. Called by the graph editor when
 ## block_fire / block_start / block_end debugger events fire for this effect.
@@ -417,11 +412,23 @@ func force_hide() -> void:
 # ─── Animation helpers ────────────────────────────────────────────────────────
 
 func _fire_show() -> void:
-	_pending_show.call()
-	_position_near(_pending_rect)
+	# show() BEFORE _pending_show: the preview loop bails while the panel is hidden,
+	# so it must already be visible when _start_preview kicks it off — otherwise the
+	# loop exits on its first check and the mini-preview never animates (it only ran
+	# before if you re-hovered an already-visible panel). modulate stays 0 so it's
+	# invisible until the fade-in.
 	modulate.a = 0.0
 	show()
+	_pending_show.call()
+	_position_near(_current_src_rect())
 	_fade_in()
+
+## The block's rect right now (not when the hover started) — survives a scroll/zoom
+## during the show-delay. Falls back to the captured rect if the block is gone.
+func _current_src_rect() -> Rect2:
+	if is_instance_valid(_pending_node) and _pending_node.is_visible_in_tree():
+		return _pending_node.get_global_rect()
+	return _pending_rect
 
 func _fire_hide() -> void:
 	_stop_anim()
@@ -556,6 +563,14 @@ func _run_preview_loop(effect: JuiceeEffect, category: String, my_gen: int) -> v
 				if pn.ends_with("duration") or pn == "hold":
 					if float(copy.get(pn)) > 0.6:
 						copy.set(pn, 0.6)
+
+		# Screen-overlay effects that clear their centre (Speed Lines) draw thin lines
+		# only near the edges — in the tiny wide preview that reads as "nothing".
+		# Fill the whole preview and strengthen so the mini-demo is actually visible.
+		if copy.get("center_clear") != null:
+			copy.set("center_clear", 0.0)
+			if copy.get("strength") != null:
+				copy.set("strength", maxf(float(copy.get("strength")), 0.85))
 
 		var context := _get_context(category)
 		if context.is_inside_tree():

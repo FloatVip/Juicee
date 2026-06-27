@@ -80,34 +80,42 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 		await back.finished
 
-	_restore_env(env, was_glow_enabled, orig_intensity, orig_strength, orig_bloom)
+	# fade_out=false means "stays at peak" — release WITHOUT restoring so it persists.
+	_restore_env(env, was_glow_enabled, orig_intensity, orig_strength, orig_bloom, fade_out)
 
 func _restore_env(env: Environment, was_glow_enabled: bool, orig_intensity: float,
-		orig_strength: float, orig_bloom: float) -> void:
+		orig_strength: float, orig_bloom: float, restore: bool = true) -> void:
 	if not is_instance_valid(env):
 		_release_state(env, "glow_intensity")
 		_release_state(env, "glow_strength")
 		_release_state(env, "glow_bloom")
 		return
-	# Restore from the stack (handles concurrent effects correctly).
-	env.glow_intensity = orig_intensity
-	env.glow_strength = orig_strength
-	env.glow_bloom = orig_bloom
-	if not was_glow_enabled:
-		env.glow_enabled = false
-	_release_state(env, "glow_intensity")
-	_release_state(env, "glow_strength")
-	_release_state(env, "glow_bloom")
+	# Restore from the stack (handles concurrent effects correctly), unless we're
+	# intentionally leaving the glow boosted (fade_out=false).
+	if restore:
+		env.glow_intensity = orig_intensity
+		env.glow_strength = orig_strength
+		env.glow_bloom = orig_bloom
+		if not was_glow_enabled:
+			env.glow_enabled = false
+	_release_state(env, "glow_intensity", restore)
+	_release_state(env, "glow_strength", restore)
+	_release_state(env, "glow_bloom", restore)
 
 # Walks the scene tree looking for an active WorldEnvironment node and returns
 # its Environment resource. WorldEnvironment nodes can be 2D or 3D scoped
 # (Camera2D/Camera3D environment overrides also count, but most projects use
 # a single WorldEnvironment under the scene root).
 func _find_active_environment(context: Node) -> Environment:
-	var root: Node = context.get_tree().current_scene if context.get_tree() else context
+	var tree := context.get_tree()
+	var root: Node = tree.current_scene if tree else context
+	if not root:  # current_scene is null in autoload / added-to-root contexts
+		root = context
 	return _scan_for_env(root)
 
 func _scan_for_env(node: Node) -> Environment:
+	if node == null:
+		return null
 	if node is WorldEnvironment:
 		var we := node as WorldEnvironment
 		if we.environment:

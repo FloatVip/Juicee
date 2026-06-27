@@ -59,5 +59,7 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		tween.tween_interval(duration * 0.75)
 
 	await tween.finished
-	if is_instance_valid(target):
+	# Only restore the material when fading out. With fade_out=false the outline is
+	# meant to persist (the caller cleans up later) — restoring here would erase it.
+	if fade_out and is_instance_valid(target):
 		target.material = original_material

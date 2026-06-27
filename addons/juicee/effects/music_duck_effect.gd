@@ -28,6 +28,11 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		return
 
 	var original_db: float = AudioServer.get_bus_volume_db(bus_idx)
+	# stop() restores the bus — the killed tween's `await` would otherwise skip the
+	# restore below and leave the bus ducked forever.
+	_on_stop(func() -> void:
+		if AudioServer.get_bus_index(bus) >= 0:
+			AudioServer.set_bus_volume_db(bus_idx, original_db))
 	var effective_duck_db: float = duck_db * intensity_mult
 	var target_db: float = original_db + effective_duck_db
 

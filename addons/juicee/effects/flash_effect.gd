@@ -15,8 +15,8 @@ func get_category_color() -> Color:
 
 func _apply(context: Node, intensity_mult: float) -> void:
 	var target: CanvasItem = context as CanvasItem
-	if not target:
-		push_warning("JuiceeFlashEffect: context is not a CanvasItem")
+	if not target or not target.is_inside_tree():
+		push_warning("JuiceeFlashEffect: context is not a CanvasItem in the tree")
 		return
 
 	var original_modulate: Color = _capture_state(target, "modulate")

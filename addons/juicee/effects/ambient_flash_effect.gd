@@ -51,9 +51,10 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		await tree.process_frame
 		elapsed += tree.root.get_process_delta_time()
 
-	if is_instance_valid(target):
-		if hold_at_end and not _cancelled:
-			target.modulate = target_color
-		else:
-			target.modulate = original_modulate
-	_release_state(target, "modulate")
+	# When holding, set the flash colour and release WITHOUT restoring (otherwise
+	# release would hard-restore the original on top of the hold). Otherwise release
+	# normally, which restores the original modulate for us.
+	var keep := hold_at_end and not _cancelled
+	if is_instance_valid(target) and keep:
+		target.modulate = target_color
+	_release_state(target, "modulate", not keep)

@@ -42,4 +42,5 @@ func _apply(context: Node, _intensity_mult: float) -> void:
 		tween.tween_property(cam, "global_position", original_position, return_duration)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		await tween.finished
-	_release_state(cam, "global_position")
+	# return_to_original=false intentionally leaves the camera where it ended up.
+	_release_state(cam, "global_position", return_to_original)

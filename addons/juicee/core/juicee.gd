@@ -458,6 +458,16 @@ func scan_lines(context: Node, line_count: float = 300.0, strength: float = 0.25
 	effect.duration = duration
 	effect.apply(context)
 
+## Anime radial speed-lines overlay (dashes, speed bursts, focus/shock moments).
+func speed_lines(context: Node, strength: float = 0.5, duration: float = 0.4,
+		color: Color = Color.WHITE, density: float = 140.0) -> void:
+	var effect := JuiceeSpeedLinesEffect.new()
+	effect.strength = strength
+	effect.duration = duration
+	effect.line_color = color
+	effect.density = density
+	effect.apply(context)
+
 ## Analog film grain overlay (cinematic grit, horror atmosphere).
 func film_grain(context: Node, grain_strength: float = 0.12, grain_speed: float = 30.0,
 		duration: float = 1.0) -> void:
@@ -688,6 +698,15 @@ func pitch_shift(context: Node, target_pitch: float = 0.7, bus: String = "Master
 	effect.duration = duration
 	effect.apply(context)
 
+## Temporarily low-pass ("muffle") an audio bus (muffled-on-hit, underwater, stunned).
+func low_pass(context: Node, target_cutoff: float = 500.0, bus: String = "Master",
+		duration: float = 0.6) -> void:
+	var effect := JuiceeLowPassEffect.new()
+	effect.bus_name = bus
+	effect.target_cutoff = target_cutoff
+	effect.duration = duration
+	effect.apply(context)
+
 # ─── Built-in presets ──────────────────────────────────────────────────────
 # Drop-in game-feel sequences. Each is a one-line call from your game code.
 # These build the sequence INLINE — no .tres file needed, no resource lookup.
@@ -911,12 +930,31 @@ func outline(target: CanvasItem, outline_color: Color = Color(1.0, 0.85, 0.20, 1
 	effect.apply(target)
 
 ## Cycle a CanvasItem's modulate through the hue wheel (powerup rainbow, party mode).
+## Set loop=true for a persistent "RAINBOW MODE" that runs until you stop it.
 func color_cycle(target: CanvasItem, cycles: float = 2.0, duration: float = 1.5,
-		saturation: float = 1.0) -> void:
+		saturation: float = 1.0, loop: bool = false) -> void:
 	var effect := JuiceeColorCycleEffect.new()
 	effect.cycles = cycles
 	effect.duration = duration
 	effect.saturation = saturation
+	effect.loop = loop
+	effect.apply(target)
+
+## Expanding impact ring + radiating spikes at a Node2D (crit / explosion "POW").
+func impact_ring(target: Node2D, color: Color = Color(1.0, 0.85, 0.3),
+		spikes: int = 8, radius: float = 42.0) -> void:
+	var effect := JuiceeImpactRingEffect.new()
+	effect.color = color
+	effect.spikes = spikes
+	effect.radius = radius
+	effect.apply(target)
+
+## Gentle continuous rotation sway (pendulum). cycles=0 sways forever (until stop()).
+func sway(target: Node, angle: float = 6.0, period: float = 1.2, cycles: float = 0.0) -> void:
+	var effect := JuiceeSwayEffect.new()
+	effect.angle = angle
+	effect.period = period
+	effect.cycles = cycles
 	effect.apply(target)
 
 ## Run an array of effects in sequence (or parallel). Convenience wrapper for JuiceeChainEffect.

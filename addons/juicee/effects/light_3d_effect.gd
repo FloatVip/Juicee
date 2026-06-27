@@ -49,5 +49,6 @@ func _apply(context: Node, intensity_mult: float) -> void:
 				.set_delay(-(duration * 0.9))
 	await tween.finished
 
-	_release_state(light, "light_energy")
-	_release_state(light, "light_color")
+	# restore_energy=false intentionally leaves the light at its flashed energy/colour.
+	_release_state(light, "light_energy", restore_energy)
+	_release_state(light, "light_color", restore_energy)

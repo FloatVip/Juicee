@@ -58,7 +58,11 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	p.angular_velocity_max = 360.0
 	p.color_ramp = color_ramp
 	p.global_position = origin.global_position
-	origin.get_tree().current_scene.add_child(p)
+	# current_scene is null in autoload / added-to-root contexts — fall back to origin.
+	var spawn_parent: Node = origin.get_tree().current_scene
+	if not spawn_parent:
+		spawn_parent = origin
+	spawn_parent.add_child(p)
 	p.emitting = true
 	await origin.get_tree().create_timer(lifetime + 0.2, true, false, false).timeout
 	if is_instance_valid(p):

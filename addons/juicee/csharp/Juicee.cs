@@ -305,6 +305,10 @@ public static class Juicee
 	public static void ScanLines(Node context, float lineCount = 300f, float strength = 0.25f, float duration = 1f, float scrollSpeed = 0f)
 		=> Invoke("scan_lines", context, lineCount, strength, duration, scrollSpeed);
 
+	/// <summary>Anime radial speed-lines overlay (dashes, speed bursts, focus/shock moments).</summary>
+	public static void SpeedLines(Node context, float strength = 0.5f, float duration = 0.4f, Color? color = null, float density = 140f)
+		=> Invoke("speed_lines", context, strength, duration, color ?? Colors.White, density);
+
 	/// <summary>Analog film grain overlay.</summary>
 	public static void FilmGrain(Node context, float grainStrength = 0.12f, float grainSpeed = 30f, float duration = 1f)
 		=> Invoke("film_grain", context, grainStrength, grainSpeed, duration);
@@ -416,6 +420,10 @@ public static class Juicee
 	public static void PitchShift(Node context, float targetPitch = 0.7f, string bus = "Master", float duration = 1f)
 		=> Invoke("pitch_shift", context, targetPitch, bus, duration);
 
+	/// <summary>Temporarily low-pass ("muffle") an audio bus (muffled-on-hit, underwater, stunned).</summary>
+	public static void LowPass(Node context, float targetCutoff = 500f, string bus = "Master", float duration = 0.6f)
+		=> Invoke("low_pass", context, targetCutoff, bus, duration);
+
 	// ─── Composition ─────────────────────────────────────────────────────────
 
 	/// <summary>Trigger an AnimationPlayer animation as a sequence step.</summary>
@@ -442,9 +450,17 @@ public static class Juicee
 	public static void Outline(CanvasItem target, Color? outlineColor = null, float outlineWidth = 2f, float duration = 0.8f)
 		=> Invoke("outline", target, outlineColor ?? new Color(1f, 0.85f, 0.2f, 1f), outlineWidth, duration);
 
-	/// <summary>Cycle a CanvasItem's modulate through the hue wheel (rainbow, party mode).</summary>
-	public static void ColorCycle(CanvasItem target, float cycles = 2f, float duration = 1.5f, float saturation = 1f)
-		=> Invoke("color_cycle", target, cycles, duration, saturation);
+	/// <summary>Cycle a CanvasItem's modulate through the hue wheel (rainbow, party mode). <paramref name="loop"/>=true runs until <c>stop</c> (RAINBOW MODE).</summary>
+	public static void ColorCycle(CanvasItem target, float cycles = 2f, float duration = 1.5f, float saturation = 1f, bool loop = false)
+		=> Invoke("color_cycle", target, cycles, duration, saturation, loop);
+
+	/// <summary>Expanding impact ring + radiating spikes drawn at a Node2D (crit / explosion "POW"). No shaders.</summary>
+	public static void ImpactRing(Node2D target, Color? color = null, int spikes = 8, float radius = 42f)
+		=> Invoke("impact_ring", target, color ?? new Color(1f, 0.85f, 0.3f), spikes, radius);
+
+	/// <summary>Gentle continuous rotation sway (pendulum). <paramref name="cycles"/>=0 sways forever (until <c>stop</c>).</summary>
+	public static void Sway(Node target, float angle = 6f, float period = 1.2f, float cycles = 0f)
+		=> Invoke("sway", target, angle, period, cycles);
 
 	/// <summary>
 	/// Play a pre-built JuiceeSequence resource (e.g. load a .tres). Optional params

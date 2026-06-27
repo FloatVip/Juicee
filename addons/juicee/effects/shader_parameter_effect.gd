@@ -32,7 +32,7 @@ extends JuiceeEffect
 func get_category_color() -> Color: return Color(0.22, 0.58, 1.00)
 func get_category_name() -> String: return "Object"
 
-func _apply(context: Node, intensity_mult: float) -> void:
+func _apply(context: Node, _intensity_mult: float) -> void:
 	if not context or not context.is_inside_tree():
 		return
 	if parameter_name.is_empty():
@@ -62,7 +62,7 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	tween.tween_method(
 		func(v: Variant) -> void:
 			if is_instance_valid(mat): mat.set_shader_parameter(parameter_name, v),
-		start, to_value, duration * intensity_mult
+		start, to_value, duration
 	).set_trans(transition).set_ease(easing)
 	await tween.finished
 

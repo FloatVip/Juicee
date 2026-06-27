@@ -30,6 +30,7 @@ const EFFECT_CATEGORIES := {
 	"shockwave_effect":        "Screen",
 	"cinematic_bars_effect":   "Screen",
 	"scan_lines_effect":       "Screen",
+	"speed_lines_effect":      "Screen",
 	"film_grain_effect":       "Screen",
 	"radial_blur_effect":      "Screen",
 	# Camera
@@ -72,6 +73,7 @@ const EFFECT_CATEGORIES := {
 	"rumble_effect":        "Audio",
 	"reverb_effect":        "Audio",
 	"pitch_shift_effect":   "Audio",
+	"low_pass_effect":      "Audio",
 	# Physics
 	"impulse_effect":       "Physics",
 	# ULTIMATE — Object
@@ -171,6 +173,7 @@ const EFFECT_DESCRIPTIONS := {
 	"rumble_effect":        "Gamepad vibration via Input.start_joy_vibration.",
 	"reverb_effect":        "Inject a temporary AudioEffectReverb on a bus with wet ramp.\nBoss intros, dimension shifts, low-health states.",
 	"pitch_shift_effect":   "Animate a temporary AudioEffectPitchShift on a bus.\nUnderwater, slow-mo audio, demon transformations.",
+	"low_pass_effect":      "Ramp a temporary AudioEffectLowPassFilter on a bus.\nMuffled-on-hit, underwater, stunned, behind-a-wall.",
 	"impulse_effect":       "Applies an impulse to a RigidBody2D (knockback).",
 	"ambient_flash_effect": "Repeating modulate flash for sustained states.\nLow-health siren, boss enrage, alarm pulsing.",
 	"strobe_light_effect":  "Square-wave Light2D strobe.\nLightning flashes, flashbangs, emergency sirens.",
@@ -184,6 +187,7 @@ const EFFECT_DESCRIPTIONS := {
 	"property_tween_effect":"Tween ANY property on ANY node.\nUniversal escape hatch.",
 	# New batch
 	"scan_lines_effect":       "CRT scanline overlay with scroll.\nRetro monitors, broken screens, hacker aesthetic.",
+	"speed_lines_effect":      "Anime radial speed lines converging on centre.\nDashes, bursts of speed, focus and shock moments.",
 	"film_grain_effect":       "Analog film grain noise overlay.\nCinematic grit, horror atmosphere, film emulation.",
 	"radial_blur_effect":      "Radial motion blur from a screen point.\nSpeed lines, warp drives, dash impacts.",
 	"directional_shake_effect":"Kick-recoil shake in a specific direction with perpendicular noise.\nGun fire, punches, directional hits.",
@@ -281,6 +285,7 @@ const EFFECT_DIMENSIONS: Dictionary = {
 	"rumble_effect":           ["2d","3d"],
 	"reverb_effect":           ["2d","3d"],
 	"pitch_shift_effect":      ["2d","3d"],
+	"low_pass_effect":         ["2d","3d"],
 	# Physics
 	"impulse_effect":          ["2d"],
 	# Flow — generic composition.
@@ -291,6 +296,7 @@ const EFFECT_DIMENSIONS: Dictionary = {
 	"property_tween_effect":   ["2d","3d"],
 	# New batch — Screen
 	"scan_lines_effect":       ["2d","3d"],
+	"speed_lines_effect":      ["2d","3d"],
 	"film_grain_effect":       ["2d","3d"],
 	"radial_blur_effect":      ["2d","3d"],
 	# New batch — Camera
@@ -363,6 +369,12 @@ var _popup_nav_buttons: Array[Button] = []
 var _popup_nav_index: int = -1
 ## Original category-grouped child order, restored when the search box is cleared.
 var _popup_build_order: Array[Node] = []
+## Collapsible categories in the add-node popup: category -> expanded(bool), and
+## category -> its clickable header Button (for the ▸/▾ arrow). Effect categories
+## start collapsed so you expand just the one you want instead of scrolling all.
+var _popup_category_expanded: Dictionary = {}
+var _popup_headers: Dictionary = {}
+var _popup_current_category: String = ""
 
 ## Transient "toast" banner for rejected actions (invalid connections, etc.).
 var _toast: PanelContainer = null
@@ -511,6 +523,7 @@ func _style_graph() -> void:
 
 func _build_popup() -> void:
 	_popup_items.clear()
+	_popup_headers.clear()
 	for c in _popup_list.get_children():
 		c.queue_free()
 
@@ -569,16 +582,51 @@ func _build_popup() -> void:
 	# Remember the grouped order so clearing the search box can restore it.
 	_popup_build_order = _popup_list.get_children()
 
+## A clickable category header that folds/unfolds its effect rows. "Flow control"
+## (the graph built-ins) starts expanded; effect categories start collapsed.
 func _add_popup_section_label(text: String) -> void:
-	var lbl := Label.new()
-	lbl.text = text.to_upper()
-	lbl.add_theme_font_size_override("font_size", int(10 * EDSCALE))
-	lbl.modulate = Color(1, 1, 1, 0.6)
-	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", int(4 * EDSCALE))
-	m.add_theme_constant_override("margin_top", int(4 * EDSCALE))
-	m.add_child(lbl)
-	_popup_list.add_child(m)
+	var category := text
+	_popup_current_category = category
+	if not _popup_category_expanded.has(category):
+		_popup_category_expanded[category] = (category == "Flow control")
+
+	var btn := Button.new()
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.add_theme_font_size_override("font_size", int(13 * EDSCALE))
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = Vector2(0, 30) * EDSCALE
+	btn.modulate = Color(1, 1, 1, 0.85)
+	btn.set_meta("is_header", true)
+	btn.set_meta("category", category)
+	btn.tooltip_text = "Click to expand / collapse this category"
+	btn.pressed.connect(func() -> void: _toggle_popup_category(category))
+	_popup_list.add_child(btn)
+	_popup_headers[category] = btn
+	_update_header_text(btn, category)
+
+func _update_header_text(btn: Button, category: String) -> void:
+	var arrow := "▾  " if _popup_category_expanded.get(category, false) else "▸  "
+	btn.text = arrow + category.to_upper()
+
+func _toggle_popup_category(category: String) -> void:
+	var expanded: bool = not _popup_category_expanded.get(category, false)
+	_popup_category_expanded[category] = expanded
+	if _popup_headers.has(category):
+		_update_header_text(_popup_headers[category] as Button, category)
+	# Only re-show rows when not mid-search (search drives its own visibility).
+	if _popup_search and not _popup_search.text.strip_edges().is_empty():
+		return
+	var keep_scroll: int = _popup_scroll.scroll_vertical if is_instance_valid(_popup_scroll) else 0
+	for c in _popup_list.get_children():
+		if c is HBoxContainer and c.has_meta("category") and str(c.get_meta("category")) == category:
+			c.visible = expanded
+	_rebuild_popup_nav(false, false)
+	# The list relays out this frame; restore the scroll so a fold/unfold keeps the
+	# view where it was instead of snapping to the top or bottom.
+	if is_instance_valid(_popup_scroll):
+		_popup_scroll.set_deferred("scroll_vertical", keep_scroll)
 
 func _add_popup_item(label: String, color: Color, _icon_path: String, entry: Variant, tooltip: String = "", dims: Array = [], category: String = "") -> void:
 	var row := HBoxContainer.new()
@@ -586,6 +634,14 @@ func _add_popup_item(label: String, color: Color, _icon_path: String, entry: Var
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_popup_list.add_child(row)
+	# Belongs to the current category section; hidden unless that section is expanded.
+	var row_cat := category if not category.is_empty() else _popup_current_category
+	row.set_meta("category", row_cat)
+	row.visible = _popup_category_expanded.get(row_cat, false)
+	# Trigger / Comment have no input port — flagged so they can be hidden when the
+	# popup is opened by dragging a wire (you can't connect a wire into them).
+	if entry is String and (str(entry) == "builtin:trigger" or str(entry) == "builtin:comment"):
+		row.set_meta("no_input", true)
 
 	var dot := ColorRect.new()
 	dot.color = color
@@ -609,6 +665,8 @@ func _add_popup_item(label: String, color: Color, _icon_path: String, entry: Var
 	if not tooltip.is_empty():
 		btn.tooltip_text = "%s\n\n%s" % [label, tooltip]
 	btn.pressed.connect(func() -> void: _on_popup_choice(entry))
+	# Hovering a row moves the highlight onto it (mouse and keyboard share one cursor).
+	btn.mouse_entered.connect(func() -> void: _hover_popup_item(btn))
 	row.add_child(btn)
 
 	# Rich-text overlay: shows the label and bolds the matched characters. Ignores
@@ -647,16 +705,20 @@ func _add_popup_item(label: String, color: Color, _icon_path: String, entry: Var
 func _on_popup_search_changed(text: String) -> void:
 	var q := text.strip_edges().to_lower()
 
-	# Empty query → restore the category-grouped layout, show everything, and
-	# clear any match-bolding from a previous search.
+	# Empty query → restore the category-grouped layout, fold rows back to their
+	# category's expanded state, show headers, and clear any match-bolding.
 	if q.is_empty():
 		_restore_popup_order()
 		for c in _popup_list.get_children():
-			c.visible = true
-			var btn := _row_button(c)
-			if btn and btn.has_meta("rtl"):
-				(btn.get_meta("rtl") as RichTextLabel).text = str(btn.get_meta("display", ""))
-		_rebuild_popup_nav()
+			if c is HBoxContainer:
+				var cat := str(c.get_meta("category", ""))
+				c.visible = _popup_category_expanded.get(cat, false)
+				var btn := _row_button(c)
+				if btn and btn.has_meta("rtl"):
+					(btn.get_meta("rtl") as RichTextLabel).text = str(btn.get_meta("display", ""))
+			else:
+				c.visible = true  # category header
+		_rebuild_popup_nav(false, false)
 		return
 
 	# Score every effect row (>0 = match), then show the matches as a flat,
@@ -796,24 +858,28 @@ func _highlight_bbcode(display: String, q: String) -> String:
 
 ## Rebuilds the list of visible effect buttons and highlights the first, so the
 ## user can type then press Enter to drop the top match.
-func _rebuild_popup_nav() -> void:
+func _rebuild_popup_nav(scroll: bool = true, highlight_first: bool = true) -> void:
 	_popup_nav_buttons.clear()
 	for c in _popup_list.get_children():
 		if c is HBoxContainer and c.visible:
 			var btn := _row_button(c)
 			if btn:
 				_popup_nav_buttons.append(btn)
-	_popup_nav_index = 0 if not _popup_nav_buttons.is_empty() else -1
-	_apply_popup_highlight()
+	# Browsing: no row is pre-highlighted — the highlight follows the mouse (or the
+	# arrow keys). Only a search pre-selects the top match so Enter can drop it.
+	_popup_nav_index = 0 if (highlight_first and not _popup_nav_buttons.is_empty()) else -1
+	_apply_popup_highlight(scroll)
 
-func _apply_popup_highlight() -> void:
+func _apply_popup_highlight(scroll: bool = false) -> void:
 	for i in _popup_nav_buttons.size():
 		var btn := _popup_nav_buttons[i]
 		if i == _popup_nav_index:
 			btn.flat = false
 			btn.add_theme_stylebox_override("normal", _popup_highlight_box())
 			btn.add_theme_stylebox_override("hover", _popup_highlight_box())
-			if is_instance_valid(_popup_scroll):
+			# Only chase the highlight into view when actually navigating (arrows /
+			# search) — never on a fold/unfold, or the list jumps to the top.
+			if scroll and is_instance_valid(_popup_scroll):
 				_popup_scroll.ensure_control_visible(btn)
 		else:
 			btn.flat = true
@@ -836,11 +902,22 @@ func _popup_highlight_box() -> StyleBoxFlat:
 		_popup_hl_box.content_margin_bottom = 2 * EDSCALE
 	return _popup_hl_box
 
+## Mouse hover takes over the highlight, so it tracks the cursor (no scroll jump).
+func _hover_popup_item(btn: Button) -> void:
+	var idx := _popup_nav_buttons.find(btn)
+	if idx >= 0 and idx != _popup_nav_index:
+		_popup_nav_index = idx
+		_apply_popup_highlight(false)
+
 func _move_popup_nav(delta: int) -> void:
 	if _popup_nav_buttons.is_empty():
 		return
-	_popup_nav_index = wrapi(_popup_nav_index + delta, 0, _popup_nav_buttons.size())
-	_apply_popup_highlight()
+	# From "no selection" the first key picks the top (↓) or bottom (↑) row.
+	if _popup_nav_index < 0:
+		_popup_nav_index = 0 if delta > 0 else _popup_nav_buttons.size() - 1
+	else:
+		_popup_nav_index = wrapi(_popup_nav_index + delta, 0, _popup_nav_buttons.size())
+	_apply_popup_highlight(true)
 
 func _activate_popup_nav() -> void:
 	if _popup_nav_index < 0 or _popup_nav_index >= _popup_nav_buttons.size():
@@ -874,16 +951,24 @@ func _on_popup_choice(entry: Variant) -> void:
 
 	var pos: Vector2 = _popup_pos if _popup_pos != Vector2.ZERO else (_graph.scroll_offset + _graph.size * 0.5)
 	var new_id := ""
+	var no_input := false
 	if entry is String and (entry as String).begins_with("builtin:"):
 		var type := (entry as String).substr("builtin:".length())
+		# Trigger (graph entry point) and Comment have no input port.
+		no_input = type == "trigger" or type == "comment"
 		new_id = _add_builtin(type, pos)
 	elif entry is Script:
 		new_id = _add_effect(entry as Script, pos)
 
 	if not pending_from.is_empty() and not new_id.is_empty():
-		_graph.connect_node(pending_from, pending_port, new_id, 0)
-		_resource.add_connection(pending_from, pending_port, new_id, 0)
-		_mark_dirty()
+		if no_input:
+			# Dragged a wire onto a Trigger/Comment — can't connect into it; drop it
+			# unconnected rather than make an invalid edge into the entry point.
+			_show_graph_toast("Trigger / Comment has no input — added unconnected")
+		else:
+			_graph.connect_node(pending_from, pending_port, new_id, 0)
+			_resource.add_connection(pending_from, pending_port, new_id, 0)
+			_mark_dirty()
 
 func _build_toolbar() -> Control:
 	# Toolbar uses Godot's native bottom-panel toolbar look — a thin HBox with
@@ -1727,9 +1812,32 @@ func _on_open_path_selected(path: String) -> void:
 	else:
 		push_error("JuiceeGraphEditor: file is neither a JuiceeGraphResource nor a JuiceeSequence: " + path)
 
+func _graph_has_flow_control() -> bool:
+	for n in _resource.nodes:
+		if n.type in ["split", "random", "condition", "loop"]:
+			return true
+	return false
+
 func _export_sequence() -> void:
 	if not _resource:
 		return
+	# A flat JuiceeSequence can't represent branching — warn before flattening.
+	if _graph_has_flow_control():
+		var confirm := ConfirmationDialog.new()
+		confirm.title = "Flow control will be flattened"
+		confirm.dialog_text = "This graph uses flow control (Split / Random / Condition / Loop).\n\nA JuiceeSequence is a flat list and can't represent branching, so the export FLATTENS it (Random/Condition run every branch, Loop runs once, Split becomes sequential).\n\nTo keep the branching, use Save instead and play the .tres with\nJuiceeGraphPlayer.play(graph, context).\n\nExport the flattened sequence anyway?"
+		confirm.ok_button_text = "Export flattened"
+		add_child(confirm)
+		confirm.popup_centered()
+		confirm.confirmed.connect(func() -> void:
+			confirm.queue_free()
+			_do_export_sequence()
+		, CONNECT_ONE_SHOT)
+		confirm.canceled.connect(func() -> void: confirm.queue_free(), CONNECT_ONE_SHOT)
+		return
+	_do_export_sequence()
+
+func _do_export_sequence() -> void:
 	var seq := _resource.to_sequence()
 	var dlg := EditorFileDialog.new()
 	dlg.access = EditorFileDialog.ACCESS_RESOURCES
@@ -1847,6 +1955,16 @@ func _open_add_popup(at_local_position: Vector2) -> void:
 func _open_add_popup_at_screen(screen_pos: Vector2) -> void:
 	_popup_search.text = ""
 	_on_popup_search_changed("")
+	# Opened by dragging a wire → hide the input-less nodes (Trigger / Comment);
+	# they can't be a connection target. (Right-click opens with everything.)
+	if not _pending_connect_from.is_empty():
+		var hid := false
+		for c in _popup_list.get_children():
+			if c is HBoxContainer and bool(c.get_meta("no_input", false)):
+				c.visible = false
+				hid = true
+		if hid:
+			_rebuild_popup_nav(false, false)
 	_popup.popup(Rect2i(Vector2i(screen_pos), Vector2i(260, 360)))
 	_popup_search.grab_focus.call_deferred()
 
@@ -2544,9 +2662,8 @@ func _on_block_hovered(block: JuiceeGraphBlock) -> void:
 	if not is_instance_valid(hover_panel):
 		return
 	var data := block.node_data
-	var rect  := block.get_global_rect()
 	if data.type == "effect" and data.effect:
-		hover_panel.call("show_for_effect", data.effect, rect)
+		hover_panel.call("show_for_effect", data.effect, block)
 	else:
 		var meta: Dictionary = JuiceeGraphBlock.BUILTIN_META.get(
 			data.type, {"title": data.type, "sub": "", "color": Color.WHITE, "tip": ""})
@@ -2555,13 +2672,16 @@ func _on_block_hovered(block: JuiceeGraphBlock) -> void:
 			meta.get("sub", ""),
 			meta.get("tip", ""),
 			meta.get("color", Color.WHITE),
-			rect)
+			block)
 
 func _on_block_unhovered(block: JuiceeGraphBlock) -> void:
+	# Only schedule a hide if we're still on this block — if the mouse already
+	# entered another block (enter-before-exit ordering), that block owns the panel
+	# now and must not have its pending show cancelled by this stale exit.
 	if _hovered_block == block:
 		_hovered_block = null
-	if is_instance_valid(hover_panel):
-		hover_panel.call("schedule_hide")
+		if is_instance_valid(hover_panel):
+			hover_panel.call("schedule_hide")
 
 func _on_graph_node_move_begin() -> void:
 	_hovered_block = null

@@ -39,5 +39,6 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		tween.tween_interval(duration)
 
 	await tween.finished
-	if is_instance_valid(layer):
+	# fade_out=false means "holds" — keep the overlay alive instead of freeing it.
+	if fade_out and is_instance_valid(layer):
 		layer.queue_free()

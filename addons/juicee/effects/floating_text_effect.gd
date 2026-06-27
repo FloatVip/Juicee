@@ -65,11 +65,19 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Hidden until positioned — a Control spawns at (0,0) and we only know its size
+	# (to centre it) after one frame; without this it flashes in the top-left corner.
+	label.visible = false
 
 	var spawn_parent: Node = target.get_tree().current_scene
 	if not spawn_parent:
 		spawn_parent = target
 	spawn_parent.add_child(label)
+	# Freed by stop() — the rise/fade tween's `await` would otherwise skip the
+	# queue_free below and leave the label floating forever.
+	_on_stop(func() -> void:
+		if is_instance_valid(label):
+			label.queue_free())
 
 	# One frame to compute label.size from its content.
 	await target.get_tree().process_frame
@@ -97,12 +105,16 @@ func _apply(context: Node, intensity_mult: float) -> void:
 
 	var start_pos := target.global_position + spawn_offset - label.size * 0.5
 	label.global_position = start_pos
+	label.visible = true
 
+	# Label-owned (untracked) tweens: each spawned label animates independently, so
+	# re-triggering the effect mid-flight spawns a SEPARATE label instead of killing
+	# the previous one's tween (which would freeze it mid-air forever — issue #4).
 	# Pop-in scale punch at start.
 	if pop_in_amount > 0.0:
 		label.pivot_offset = label.size * 0.5
 		label.scale = Vector2(1.0 - pop_in_amount, 1.0 - pop_in_amount)
-		var punch := _track(label.create_tween())
+		var punch := label.create_tween()
 		punch.tween_property(label, "scale", Vector2.ONE * (1.0 + pop_in_amount * 0.5), 0.12)\
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		punch.tween_property(label, "scale", Vector2.ONE, 0.15)\
@@ -110,7 +122,7 @@ func _apply(context: Node, intensity_mult: float) -> void:
 
 	# Parallel rise + fade.
 	var end_pos := start_pos + travel
-	var tween := _track(label.create_tween()).set_parallel(true)
+	var tween := label.create_tween().set_parallel(true)
 	tween.tween_property(label, "global_position", end_pos, duration)\
 		.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	tween.tween_property(label, "modulate:a", 0.0, duration * 0.5).set_delay(duration * 0.5)

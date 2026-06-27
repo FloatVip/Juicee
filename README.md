@@ -1,16 +1,14 @@
-<div align="center">
-
-<img src="docs/screenshots/store/banner.webp" alt="Juicee — game-feel effects for Godot 4" width="100%">
+<p align="center">
+  <img src="docs/screenshots/store/banner.webp" alt="Juicee — game-feel effects for Godot 4" width="100%">
+</p>
 
 # 🧃 Juicee
 
-**Game-feel effects for Godot 4 — 90 effects, a visual graph editor, a custom inspector, and a one-line API. Free & MIT.**
+**Game-feel effects for Godot 4 — 94 effects, a visual graph editor, a custom inspector, and a one-line API. Free & MIT.**
 
-[![Godot 4.2+](https://img.shields.io/badge/Godot-4.2%2B-blue)](https://godotengine.org)
-[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Effects 90](https://img.shields.io/badge/effects-90-orange)](#whats-inside)
-
-</div>
+[![Godot 4.3+](https://img.shields.io/badge/Godot-4.3%2B-blue)](https://godotengine.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Effects: 94](https://img.shields.io/badge/effects-94-orange)](#whats-inside)
 
 ## 🎬 Demo
 
@@ -67,7 +65,7 @@ All three workflows persist as the same `JuiceeSequence.tres`.
 2. **Project → Project Settings → Plugins** → enable **Juicee**
 3. (Optional) **JuiceeGraph** panel appears at the bottom of the editor
 
-Requires Godot 4.2+ and the Forward Plus or Mobile renderer (screen shaders use `hint_screen_texture`).
+Requires **Godot 4.3+** (uses the `@experimental` annotation). Works in all three renderers — Forward+, Mobile, and Compatibility — because the screen effects read the viewport through a `BackBufferCopy` + `hint_screen_texture` overlay rather than a renderer-specific buffer.
 
 ### Updating
 
@@ -103,14 +101,14 @@ func _on_hit(): juicee.play()
 
 1. Add a `JuiceePlayer` node to your scene.
 2. Click it in the scene tree.
-3. The custom Inspector shows an "**+ Add Effect**" dropdown with all 90 effects.
+3. The custom Inspector shows an "**+ Add Effect**" dropdown with all 94 effects.
 4. Pick effects, tweak sliders, click **▶ Preview Effect**.
 5. Call `juicee.play()` from code.
 
 ### Visual graph editor
 
 1. Open the **JuiceeGraph** bottom panel.
-2. Right-click in the canvas → search the categorized popup ("Screen" / "Camera" / "Object" / "Time" / …).
+2. Right-click in the canvas → the add-node popup. Browse by **collapsible category** (Screen / Camera / Object / Time / …) or just type to fuzzy-search across everything (↑↓ to move, Enter to drop).
 3. Drop a **Trigger** node, then effect nodes, wire them up.
 4. Add **Loop** / **Random** / **Split** to control flow.
 5. **▶ Test** — preview the whole graph, blocks pulse as they fire.
@@ -133,20 +131,20 @@ Requires the .NET build of Godot with the plugin enabled. See [`docs/csharp.md`]
 
 ## What's inside
 
-**90 effects** in 8 categories + 12 drop-in presets + built-in updater:
+**94 effects** in 8 categories + 12 drop-in presets + built-in updater:
 
 | Category | Count | Effects |
 |---|---|---|
-| **Screen** | 17 | Chromatic, Vignette, Blur, Pixelate, Glitch, Color Grade, Screen Tint, Screen Wipe, **Bloom** ⚡, **Tonemap** ⚡, **Shockwave** 🔥, **Cinematic Bars** 🔥, **Scan Lines** 🔥, **Film Grain** 🔥, **Radial Blur** 🔥, **Lens Distortion** ★, **Depth of Field** ★ |
-| **Camera** | 9 | Shake (2D / 3D), Zoom, FOV 3D, Camera Follow, **Directional Shake** 🔥, **Camera Bob** 🔥, **Zoom Pulse** 🔥, **Camera Rotation (Dutch Tilt)** ★ |
-| **Object** | 34 | Flash, Modulate, Bounce, Jiggle Physics, Position (2D / 3D), Rotation (2D / 3D), Trail, Burst, Confetti, Light Flash, **Spring** ⚡, **Ambient Flash** 🔥, **Strobe Light** 🔥, **Recoil** 🔥, **Outline** 🔥, **Color Cycle** 🔥, **Spin** 🔥, **Wiggle** 🔥, **Sprite Bob** 🔥, **Pop In** 🔥, **Shake Control** 🔥, **Pulse** 🔥, **Shader Parameter** ★, **Flicker** ★, **Scale To** ★, **Particle Control** ★, **Light 3D Flash** ★, **Material 3D** ★, **Fade** ●, **Flip** ●, **Instantiate** ●, **Size Delta** ● |
-| **Text** ⚡ | 6 | **Damage Number** (with crit), **Floating Text**, **Button Punch**, **Typewriter**, **Number Count**, **Text Wobble** |
-| **Time** | 4 | Hit Stop, Time Scale Ramp, Delay, **Freeze Frame** 🔥 |
-| **Audio** | 6 | Sound, Music Duck, Rumble, **Reverb** ⚡, **Pitch Shift** ⚡, **Audio Source 3D** ★ |
-| **Physics** | 2 | Impulse (RigidBody2D), **Add Force (2D / 3D)** ★ |
-| **Flow** | 12 | Sequence (nested), Property Tween, **Animation Player** 🔥, **Set Active** 🔥, **Chain** 🔥, **Beat Sync** 🔥, **Wait For Input** 🔥, **Emit Signal** ★, **Debug Log** ★, **Animation Tree** ★, **Set Property** ★, **Auto Destruct** ● |
+| **Screen** | 18 | Chromatic, Vignette, Blur, Pixelate, Glitch, Color Grade, Screen Tint, Screen Wipe, Bloom, Tonemap, Shockwave, Cinematic Bars, Scan Lines, **Speed Lines** ✨, Film Grain, Radial Blur, Lens Distortion, Depth of Field |
+| **Camera** | 9 | Shake (2D / 3D), Zoom, FOV 3D, Camera Follow, Directional Shake, Camera Bob, Zoom Pulse, Camera Rotation (Dutch Tilt) |
+| **Object** | 36 | Flash, Modulate, Bounce, Jiggle Physics, Position (2D / 3D), Rotation (2D / 3D), Trail, Burst, Confetti, Light Flash, Spring, Ambient Flash, Strobe Light, Recoil, Outline, Color Cycle, Spin, Wiggle, Sprite Bob, Pop In, Shake Control, Pulse, Shader Parameter, Flicker, Scale To, Particle Control, Light 3D Flash, Material 3D, Fade, Flip, Instantiate, Size Delta, **Impact Ring** ✨, **Sway** ✨ |
+| **Text** | 6 | Damage Number (with crit), Floating Text, Button Punch, Typewriter, Number Count, Text Wobble |
+| **Time** | 4 | Hit Stop, Time Scale Ramp, Delay, Freeze Frame |
+| **Audio** | 7 | Sound, Music Duck, Rumble, Reverb, Pitch Shift, **Low-Pass (Muffle)** ✨, Audio Source 3D |
+| **Physics** | 2 | Impulse (RigidBody2D), Add Force (2D / 3D) |
+| **Flow** | 12 | Sequence (nested), Property Tween, Animation Player, Set Active, Chain, Beat Sync, Wait For Input, Emit Signal, Debug Log, Animation Tree, Set Property, Auto Destruct |
 
-⚡ = FEEL feature parity &nbsp;·&nbsp; 🔥 = ULTIMATE additions &nbsp;·&nbsp; ★ = Batch 3 (deep system) &nbsp;·&nbsp; ● = fundamental essentials
+✨ = new in 1.2.0
 
 ### Built-in drop-in presets (one-line API)
 
@@ -170,7 +168,7 @@ No `.tres` lookup, no graph editing required — these build the sequence inline
 ### Native Godot integration (no custom shaders for these)
 
 - **Bloom** / **Tonemap** — animate your existing `WorldEnvironment` post-process settings. Zero performance overhead, works in 2D + 3D.
-- **Reverb** / **Pitch Shift** — temporarily inject `AudioEffectReverb` / `AudioEffectPitchShift` on any audio bus with smooth wet/pitch ramping.
+- **Reverb** / **Pitch Shift** / **Low-Pass** — temporarily inject `AudioEffectReverb` / `AudioEffectPitchShift` / `AudioEffectLowPassFilter` on any audio bus with smooth ramping. Low-Pass is the muffled-on-hit / underwater / stunned feel — pairs perfectly with Hit Stop.
 - **Spring** — harmonic oscillator on any Vector2 property. Universal bouncy menus, squash-on-hit, panel-into-view animation.
 
 ### Curve-based parameters (designer-controlled feel)
@@ -223,7 +221,7 @@ Effects access via `_runtime_params.get("key", default)`.
 | Doc | What's in it |
 |---|---|
 | [`docs/api-reference.md`](docs/api-reference.md) | Full API for every core class: JuiceeEffect, JuiceeSequence, JuiceePlayer, JuiceeStateStack, JuiceeAccessibility, JuiceeBeatClock, JuiceeGraphPlayer |
-| [`docs/effects-reference.md`](docs/effects-reference.md) | All 90 effects with every `@export` parameter documented |
+| [`docs/effects-reference.md`](docs/effects-reference.md) | All 94 effects with every `@export` parameter documented |
 | [`docs/singleton-api.md`](docs/singleton-api.md) | Full `Juicee.*` singleton method listing with signatures |
 | [`docs/csharp.md`](docs/csharp.md) | Using the entire Juicee API from C# / .NET projects |
 | [`docs/procedural-sfx.md`](docs/procedural-sfx.md) | Procedural sound effects (sfxr, _experimental_) — synthesize retro SFX with zero audio assets |
