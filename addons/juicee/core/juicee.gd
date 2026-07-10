@@ -707,6 +707,37 @@ func low_pass(context: Node, target_cutoff: float = 500.0, bus: String = "Master
 	effect.duration = duration
 	effect.apply(context)
 
+## Ramp a temporary distortion on an audio bus (blown speakers, radio, damage).
+func distortion(context: Node, bus_name: String = "Master", peak_drive: float = 0.5, duration: float = 0.8) -> void:
+	var effect := JuiceeDistortionEffect.new()
+	effect.bus_name = bus_name
+	effect.peak_drive = peak_drive
+	effect.duration = duration
+	effect.apply(context)
+
+## A rapid burst of micro-freezes (machine-gun hit-stop) for hit flurries / glitches.
+func stutter(context: Node, count: int = 5, freeze_time: float = 0.03, gap_time: float = 0.03) -> void:
+	var effect := JuiceeStutterEffect.new()
+	effect.count = count
+	effect.freeze_time = freeze_time
+	effect.gap_time = gap_time
+	effect.apply(context)
+
+## Shove a RigidBody2D along `direction` (a hit reaction).
+func knockback(body: Node2D, direction: Vector2 = Vector2.RIGHT, force: float = 400.0) -> void:
+	var effect := JuiceeKnockbackEffect.new()
+	effect.default_direction = direction
+	effect.force = force
+	effect.apply(body)
+
+## Reveal a Label's text by locking in scrambling characters (decode / hacker effect).
+func text_scramble(label: Label, text: String = "", duration: float = 0.8) -> void:
+	var effect := JuiceeTextScrambleEffect.new()
+	if text != "":
+		effect.default_text = text
+	effect.duration = duration
+	effect.apply(label)
+
 # ─── Built-in presets ──────────────────────────────────────────────────────
 # Drop-in game-feel sequences. Each is a one-line call from your game code.
 # These build the sequence INLINE — no .tres file needed, no resource lookup.

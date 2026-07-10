@@ -14,6 +14,9 @@ extends JuiceeEffect
 @export_range(0.1, 5.0, 0.05) var lifetime: float = 1.2
 ## Gravity per second. Default falls down for celebratory rain.
 @export var gravity: Vector2 = Vector2(0, 250)
+## Air resistance. Pieces shoot out, then slow and drift down like paper instead of
+## flying ballistic. Try 40. 0 = no drag.
+@export_range(0.0, 200.0, 1.0) var air_drag: float = 0.0
 ## Color palette — each particle picks a color along this gradient.
 @export var colors: PackedColorArray = PackedColorArray([
 	Color(1.0, 0.3, 0.3),
@@ -52,6 +55,8 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	p.initial_velocity_max = speed * 1.5
 	p.spread = spread
 	p.gravity = gravity
+	p.damping_min = air_drag * 0.7
+	p.damping_max = air_drag * 1.3
 	p.scale_amount_min = 1.0
 	p.scale_amount_max = 2.5
 	p.angular_velocity_min = -360.0

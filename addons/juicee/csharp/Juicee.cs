@@ -424,6 +424,22 @@ public static class Juicee
 	public static void LowPass(Node context, float targetCutoff = 500f, string bus = "Master", float duration = 0.6f)
 		=> Invoke("low_pass", context, targetCutoff, bus, duration);
 
+	/// <summary>Ramp a temporary distortion on an audio bus (blown speakers, radio, damage).</summary>
+	public static void Distortion(Node context, string busName = "Master", float peakDrive = 0.5f, float duration = 0.8f)
+		=> Invoke("distortion", context, busName, peakDrive, duration);
+
+	/// <summary>A rapid burst of micro-freezes (machine-gun hit-stop) for hit flurries / glitches.</summary>
+	public static void Stutter(Node context, int count = 5, float freezeTime = 0.03f, float gapTime = 0.03f)
+		=> Invoke("stutter", context, count, freezeTime, gapTime);
+
+	/// <summary>Shove a RigidBody2D along a direction (a hit reaction).</summary>
+	public static void Knockback(Node2D body, Vector2? direction = null, float force = 400f)
+		=> Invoke("knockback", body, direction ?? Vector2.Right, force);
+
+	/// <summary>Reveal a Label's text by locking in scrambling characters (decode / hacker effect).</summary>
+	public static void TextScramble(Label label, string text = "", float duration = 0.8f)
+		=> Invoke("text_scramble", label, text, duration);
+
 	// ─── Composition ─────────────────────────────────────────────────────────
 
 	/// <summary>Trigger an AnimationPlayer animation as a sequence step.</summary>

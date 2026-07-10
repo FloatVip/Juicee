@@ -1,6 +1,6 @@
-# Juicee — Effects Reference (94 effects)
+# Juicee — Effects Reference (98 effects)
 
-All 94 effects organized by category. Every `@export` parameter is documented. For base-class params (`chance`, `delay`, `intensity_min/max`, `cooldown`) see [api-reference.md](api-reference.md).
+All 98 effects organized by category. Every `@export` parameter is documented. For base-class params (`chance`, `delay`, `intensity_min/max`, `cooldown`) see [api-reference.md](api-reference.md).
 
 **Accessibility tags** are noted where relevant — see `JuiceeAccessibility` in [api-reference.md](api-reference.md).
 
@@ -317,6 +317,7 @@ Perlin noise or random jitter on `Camera2D.offset`. The definitive game-feel eff
 | `frequency` | `float` | `15.0` | Oscillations per second. |
 | `decay` | `float` | `0.8` | How fast amplitude decays. `0` = constant, `5` = very fast. |
 | `use_noise` | `bool` | `true` | Perlin noise (smooth) vs. random jitter (chaotic). |
+| `roll_degrees` | `float` | `0.0` | Max camera roll layered on the positional shake; a touch of rotation reads much more violent. `0` = position only. |
 
 **Runtime params:** `{"hit_direction": Vector2}` — biases the shake away from the hit direction for a recoil feel.  
 **Accessibility tag:** `TAG_SCREENSHAKE`
@@ -450,7 +451,7 @@ Blinks `modulate` on a CanvasItem N times. The quintessential hit acknowledgment
 | `flash_color` | `Color` | `Color.WHITE` | The modulate color to flash to. |
 | `duration` | `float` | `0.15` | Duration per flash cycle (on + off). |
 | `flash_count` | `int` | `1` | Number of flashes. |
-| `restore_color` | `Color` | `Color.WHITE` | Color to return to at the end. |
+| `boost` | `float` | `2.0` | Over-brighten multiplier on `flash_color` (modulate can exceed 1.0), so a white flash actually brightens an untinted sprite. `1.0` = plain tint. |
 
 **Accessibility tag:** `TAG_FLASH`
 
@@ -580,6 +581,7 @@ Multi-color confetti burst. Colors cycle through a configurable palette.
 | `speed` | `float` | `200.0` | Initial speed. |
 | `spread` | `float` | `360.0` | Spread angle. |
 | `lifetime` | `float` | `1.2` | Particle lifetime. |
+| `air_drag` | `float` | `0.0` | Air resistance, pieces shoot out then slow and drift like paper. `0` = ballistic. |
 | `colors` | `Array[Color]` | (rainbow) | Color palette — particles cycle through these. |
 
 ---
@@ -693,9 +695,11 @@ Full 360° rotation tween on Node2D. Coin pickups, death spin, victory twirl.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `speed` | `float` | `360.0` | Rotation speed in degrees/second. |
-| `duration` | `float` | `0.6` | Total spin duration. `total_rotation = speed * duration`. |
-| `restore_on_end` | `bool` | `false` | Tween back to original rotation (0.15s snap). |
+| `degrees_per_second` | `float` | `360.0` | Rotation speed. Negative = counter-clockwise. |
+| `duration` | `float` | `1.0` | Total spin duration. `total_rotation = degrees_per_second * duration`. |
+| `restore_on_end` | `bool` | `false` | Tween back to the original rotation when done. |
+| `restore_duration` | `float` | `0.15` | Snap-back time (only with `restore_on_end`). |
+| `ease_out` | `bool` | `false` | Start fast and decelerate into the stop, like a coin settling. `false` = constant speed. |
 | `direction` | `float` | `1.0` | `1.0` = clockwise, `-1.0` = counter-clockwise. |
 
 ---
@@ -949,7 +953,7 @@ Smooth pendulum rotation driven by a sine wave. Unlike `JuiceeWiggleEffect` (ran
 
 ---
 
-## Text (6 effects)
+## Text (7 effects)
 
 Text effects target `Label`, `RichTextLabel`, or `Control` nodes.
 
@@ -1008,8 +1012,11 @@ Char-by-char text reveal on a `Label` via `visible_ratio`. Dialog, intros, termi
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `chars_per_second` | `float` | `30.0` | Reveal speed. |
-| `click_sound` | `AudioStream` | `null` | Optional per-char click sound. |
-| `click_pitch_variance` | `float` | `0.1` | Pitch variance on click sounds. |
+| `click_sounds` | `Array[AudioStream]` | `[]` | Optional click sounds, one picked at random per character. |
+| `click_volume_db` | `float` | `-6.0` | Click volume in dB. |
+| `click_pitch_variance` | `float` | `1.15` | Random pitch range per click (`1.0` = no variance). |
+| `skip_whitespace_clicks` | `bool` | `true` | Don't click on spaces. |
+| `punctuation_pause` | `float` | `0.0` | Extra pause after `. ! ?` (half after `, ; :`) so typing breathes like speech. `0` = even pacing. |
 
 **Runtime params:** `{"text": String}` — set the text to reveal.
 
@@ -1042,7 +1049,19 @@ Sine-wave wobble on a `Control`'s position with linear decay. Drama text — GAM
 
 ---
 
-## Time (4 effects)
+### JuiceeTextScrambleEffect
+
+Reveals a `Label`'s text by cycling random characters that lock in left to right. Decoding, hacker terminals, glitchy reveals. Pass the text via the `text` runtime param. *(New in 1.3.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `default_text` | `String` | `"DECODING"` | Text shown when the caller doesn't pass a `text` param. |
+| `duration` | `float` | `0.8` | How long the scramble takes to fully resolve. |
+| `charset` | `String` | `A-Z 0-9 !@#$%&*` | Characters cycled through for the not-yet-locked positions. |
+
+---
+
+## Time (5 effects)
 
 Time effects manipulate `Engine.time_scale`. They use real-time timers to restore state.
 
@@ -1096,7 +1115,20 @@ Pure wait — `apply()` awaits a timer then returns. Useful for sequencing in a 
 
 ---
 
-## Audio (7 effects)
+### JuiceeStutterEffect
+
+A rapid burst of micro-freezes (machine-gun hit-stop), each a brief `Engine.time_scale` drop with a gap between. Hit flurries, glitches, power surges. *(New in 1.3.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `count` | `int` | `5` | How many freeze stutters. |
+| `freeze_time` | `float` | `0.03` | Real seconds each freeze lasts. |
+| `gap_time` | `float` | `0.03` | Real seconds of normal speed between freezes. |
+| `time_scale_during` | `float` | `0.0` | `Engine.time_scale` during each freeze (`0` = full stop). |
+
+---
+
+## Audio (8 effects)
 
 Audio effects target audio buses or spawn temporary `AudioStreamPlayer` nodes. They work in both 2D and 3D scenes.
 
@@ -1202,7 +1234,22 @@ Spawn a temporary `AudioStreamPlayer3D` at the context node's world position and
 
 ---
 
-## Physics (2 effects)
+### JuiceeDistortionEffect
+
+Ramps a temporary `AudioEffectDistortion` onto a bus and back. Blown speakers, radios, damage states. Pairs with Hit Stop, like Reverb / Low-Pass. *(New in 1.3.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `bus_name` | `String` | `"Master"` | Name of the audio bus to distort. |
+| `peak_drive` | `float` | `0.5` | Peak distortion drive. |
+| `mode` | `int` | `0` (Clip) | Distortion flavour: Clip, ATan, LoFi, Overdrive, WaveShape. |
+| `duration` | `float` | `0.8` | Total duration: ramp-in + hold + ramp-out. |
+| `ramp_in_fraction` | `float` | `0.15` | Ramp-in fraction of the duration. |
+| `ramp_out_fraction` | `float` | `0.35` | Ramp-out fraction of the duration. |
+
+---
+
+## Physics (3 effects)
 
 ---
 
@@ -1231,6 +1278,18 @@ Apply an impulse or continuous force to `RigidBody2D` or `RigidBody3D`. Three mo
 | `duration` | `float` | `0.3` | Sustain time for CONSTANT_FORCE mode. |
 | `clear_force_on_end` | `bool` | `true` | Remove the constant force after `duration` (CONSTANT_FORCE only). |
 | `at_position` | `Vector2` | `Vector2.ZERO` | Local position for offset impulse (2D only). |
+
+---
+
+### JuiceeKnockbackEffect
+
+Shoves a `RigidBody2D` along `hit_direction` (falling back to `default_direction`), scaled by `force`. Aimed hit reactions, unlike Impulse's fixed vector. *(New in 1.3.0.)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `target` | `NodePath` | `(empty)` | Path to the RigidBody2D. Empty = the context must be one. |
+| `force` | `float` | `400.0` | Impulse strength (pixels/sec of velocity added). |
+| `default_direction` | `Vector2` | `RIGHT` | Direction used when no `hit_direction` is passed. |
 
 ---
 

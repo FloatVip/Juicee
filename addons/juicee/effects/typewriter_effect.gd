@@ -25,6 +25,10 @@ extends JuiceeEffect
 @export_range(1.0, 2.0, 0.01) var click_pitch_variance: float = 1.15
 ## Skip whitespace silently (don't play click for spaces).
 @export var skip_whitespace_clicks: bool = true
+## Extra pause in seconds after sentence punctuation (. ! ?), half of it after , ; :
+## so the typing breathes like speech. Try 0.25. Note that a pause makes the reveal
+## outlast `chars_per_second`, so 0 = even typing, and predictable total duration.
+@export_range(0.0, 1.0, 0.05) var punctuation_pause: float = 0.0
 
 func get_category_color() -> Color:
 	return Color(0.95, 0.42, 0.21)
@@ -76,9 +80,30 @@ func _apply(context: Node, intensity_mult: float) -> void:
 				sfx.play()
 		last_revealed_chars = now_chars
 
-	var tween := _track(label.create_tween())
-	tween.tween_method(advance, 0.0, 1.0, duration).set_trans(Tween.TRANS_LINEAR)
-	await tween.finished
+	if punctuation_pause <= 0.0:
+		# Even pacing: one linear tween, reveals multiple chars per frame at high cps.
+		var tween := _track(label.create_tween())
+		tween.tween_method(advance, 0.0, 1.0, duration).set_trans(Tween.TRANS_LINEAR)
+		await tween.finished
+	else:
+		# Per-char pacing with pauses on punctuation. Waits are batched so a fast
+		# typing speed isn't capped at one char per frame.
+		var base_step: float = 1.0 / maxf(1.0, chars_per_second * intensity_mult)
+		var tree := label.get_tree()
+		var pending: float = 0.0
+		for i in range(1, total_chars + 1):
+			if _cancelled or not is_instance_valid(label):
+				break
+			advance.call(float(i) / float(total_chars))
+			var ch: String = text_source.substr(i - 1, 1)
+			pending += base_step
+			if ch == "." or ch == "!" or ch == "?":
+				pending += punctuation_pause
+			elif ch == "," or ch == ";" or ch == ":":
+				pending += punctuation_pause * 0.5
+			if pending >= 0.016 and i < total_chars:
+				await tree.create_timer(pending, true, false, false).timeout
+				pending = 0.0
 
 	# Ensure full text is shown at the end even if a frame was skipped.
 	if is_instance_valid(label):

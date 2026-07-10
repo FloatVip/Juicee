@@ -12,6 +12,9 @@ extends JuiceeEffect
 @export_range(0.0, 5.0, 0.01) var decay: float = 0.8
 ## If true, uses smooth Perlin noise. If false, uses random offsets (jittery).
 @export var use_noise: bool = true
+## Max camera roll in degrees layered on the positional shake. A touch of rotation
+## makes the same shake read much more violent. Try 1.5. 0 = position only.
+@export_range(0.0, 15.0, 0.1) var roll_degrees: float = 0.0
 
 func get_accessibility_tag() -> int: return JuiceeAccessibility.TAG_SCREENSHAKE
 func get_category_color() -> Color:
@@ -39,8 +42,14 @@ func _apply(context: Node, intensity_mult: float) -> void:
 		noise.seed = randi()
 
 	var effective_intensity := intensity * intensity_mult
-	# Ref-counted state — handles concurrent shakes correctly.
+	var effective_roll := deg_to_rad(roll_degrees) * intensity_mult
+	var rolling := effective_roll > 0.0
+	# Ref-counted state — handles concurrent shakes correctly. Rotation is only
+	# claimed when we actually roll: capturing it with roll_degrees = 0 would
+	# restore the camera's rotation on release, clobbering whatever the game's
+	# own camera controller did to it during the shake.
 	var original_offset: Vector2 = _capture_state(cam, "offset")
+	var original_rotation: float = _capture_state(cam, "rotation") if rolling else 0.0
 	var elapsed: float = 0.0
 	var step: float = 1.0 / frequency
 	var noise_offset: float = 0.0
@@ -48,7 +57,8 @@ func _apply(context: Node, intensity_mult: float) -> void:
 
 	while elapsed < duration and is_instance_valid(cam) and not _cancelled:
 		var progress: float = elapsed / duration
-		var current_intensity: float = effective_intensity * pow(1.0 - progress, decay * 2.0)
+		var falloff: float = pow(1.0 - progress, decay * 2.0)
+		var current_intensity: float = effective_intensity * falloff
 		var offset: Vector2
 		if use_noise:
 			noise_offset += step * 10.0
@@ -66,7 +76,13 @@ func _apply(context: Node, intensity_mult: float) -> void:
 			var directional_pulse: float = current_intensity * 0.6 * sin(elapsed * frequency * TAU)
 			offset += hit_direction * directional_pulse
 		cam.offset = original_offset + offset
+		if rolling:
+			var r: float = noise.get_noise_1d(noise_offset + 200.0) if use_noise \
+				else randf_range(-1.0, 1.0)
+			cam.rotation = original_rotation + r * effective_roll * falloff
 		await tree.create_timer(step, true, false, false).timeout
 		elapsed += step
 
 	_release_state(cam, "offset")
+	if rolling:
+		_release_state(cam, "rotation")

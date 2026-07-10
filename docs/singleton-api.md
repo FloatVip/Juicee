@@ -589,6 +589,35 @@ func low_pass(
 ```
 Temporary low-pass ("muffle") on an audio bus — muffled-on-hit, underwater, stunned.
 
+```gdscript
+func distortion(
+    context: Node,
+    bus_name: String = "Master",
+    peak_drive: float = 0.5,
+    duration: float = 0.8
+) -> void
+```
+Ramp a temporary distortion on an audio bus and back. Blown speakers, radio, damage.
+
+```gdscript
+func stutter(
+    context: Node,
+    count: int = 5,
+    freeze_time: float = 0.03,
+    gap_time: float = 0.03
+) -> void
+```
+A rapid burst of micro-freezes (machine-gun hit-stop). Hit flurries, glitches.
+
+```gdscript
+func knockback(
+    body: Node2D,
+    direction: Vector2 = Vector2.RIGHT,
+    force: float = 400.0
+) -> void
+```
+Shove a RigidBody2D along a direction. Aimed hit reactions.
+
 ---
 
 ## Text / UI
@@ -650,6 +679,15 @@ func text_wobble(
 ) -> void
 ```
 Sine wobble on a Control.
+
+```gdscript
+func text_scramble(
+    label: Label,
+    text: String = "",
+    duration: float = 0.8
+) -> void
+```
+Reveal a Label's text by locking in scrambling characters. Decoding, reveals.
 
 ---
 

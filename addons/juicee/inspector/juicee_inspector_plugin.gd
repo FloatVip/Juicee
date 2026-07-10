@@ -229,8 +229,8 @@ func _build_effect_card(seq: JuiceeSequence, effect: JuiceeEffect, index: int, r
 	# Hover info panel wiring — shows description + live preview on mouse-over.
 	if is_instance_valid(hover_panel) and effect:
 		panel.mouse_entered.connect(func() -> void:
-			if is_instance_valid(hover_panel) and is_instance_valid(effect):
-				hover_panel.call("show_for_effect", effect, panel.get_global_rect())
+			if is_instance_valid(hover_panel) and is_instance_valid(effect) and is_instance_valid(panel):
+				hover_panel.call("show_for_effect", effect, panel)
 		)
 		panel.mouse_exited.connect(func() -> void:
 			if is_instance_valid(hover_panel):
@@ -316,9 +316,12 @@ func _build_effect_card(seq: JuiceeSequence, effect: JuiceeEffect, index: int, r
 	)
 	hbox.add_child(down_btn)
 
-	# Edit (opens in a separate Inspector dock)
+	# Edit (opens in a separate Inspector dock). Deferred: edit_resource rebuilds the
+	# inspector, which frees this very button mid-`pressed` emission and crashes the
+	# editor (issue #5).
 	var edit_btn := _icon_button("✎", "Edit properties (opens in Inspector)")
-	edit_btn.pressed.connect(func() -> void: EditorInterface.edit_resource(effect))
+	edit_btn.pressed.connect(func() -> void: EditorInterface.edit_resource(effect),
+		CONNECT_DEFERRED)
 	hbox.add_child(edit_btn)
 
 	# Delete

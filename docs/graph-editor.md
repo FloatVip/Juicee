@@ -211,7 +211,8 @@ The **↑ Update** toolbar button:
 
 1. Fetches the GitHub releases API for the latest version.
 2. Shows a dialog with the release tag, publish date, and release notes.
-3. On confirmation, downloads the archive, extracts `addons/juicee/` over the current installation.
-4. Prompts to reload the editor.
+3. **Continue** opens a second confirmation. A new version can add effect parameters and change their defaults, so effects you already tuned may feel different afterwards, and any local edits inside `addons/juicee/` are overwritten. Saved `.tres` sequences and graphs, and the code that calls Juicee, are untouched.
+4. **Update Now** downloads the archive and extracts `addons/juicee/` over the current installation.
+5. Prompts to reload the editor.
 
 No manual file management needed. Requires an internet connection and write access to `addons/juicee/`.

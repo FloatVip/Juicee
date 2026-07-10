@@ -2,6 +2,32 @@
 
 All notable changes to **Juicee** are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.3.0], 2026-07-08
+
+An editor-crash fix, one new effect for each of the small categories, and four new feel knobs on the classics. This is a safe upgrade: every new knob ships off, so nothing in an existing project changes look or timing. The one deliberate exception is Flash, which drew nothing at all before. **Effect count: 94 -> 98.**
+
+### Added
+
+- **Distortion** (`JuiceeDistortionEffect`, Audio), ramps a temporary `AudioEffectDistortion` on a bus and back. Blown speakers, radios, damage states. Pairs with Hit Stop, like Reverb / Low-Pass. One-liner: `Juicee.distortion(node)` · C#: `Juicee.Distortion(node)`.
+- **Stutter** (`JuiceeStutterEffect`, Time), a rapid burst of micro-freezes (machine-gun hit-stop). Hit flurries, glitches, power surges. One-liner: `Juicee.stutter(node)` · C#: `Juicee.Stutter(node)`.
+- **Knockback** (`JuiceeKnockbackEffect`, Physics), shoves a RigidBody2D along the `hit_direction` runtime param. Aimed hit reactions, vs Impulse's fixed vector. One-liner: `Juicee.knockback(body, dir)` · C#: `Juicee.Knockback(body, dir)`.
+- **Text Scramble** (`JuiceeTextScrambleEffect`, Text), reveals a Label's text by locking in scrambling characters. Decoding, hacker terminals, glitchy reveals. One-liner: `Juicee.text_scramble(label, "ACCESS GRANTED")` · C#: `Juicee.TextScramble(label, text)`.
+
+### Changed
+
+- **Four new feel knobs on the classic effects, all off by default** so this release can't change how an existing project looks. Turn them on per effect:
+  - `JuiceeShakeEffect.roll_degrees`, a small camera roll layered on the positional shake. A touch of rotation reads far more violent than position alone. Try `1.5`.
+  - `JuiceeConfettiEffect.air_drag`, air resistance. Pieces shoot out, then slow and drift down like paper instead of flying ballistic. Try `40`.
+  - `JuiceeTypewriterEffect.punctuation_pause`, extra beats after `. ! ?` (half after `, ; :`) so typing breathes like speech. Try `0.25`. Note it makes the reveal outlast `chars_per_second`, so leave it at `0` if you sync text to audio.
+  - `JuiceeSpinEffect.ease_out`, decelerate into the stop like a coin settling instead of spinning at a constant speed and stopping dead.
+- **The updater asks twice.** The release-notes dialog now leads to a second confirmation that spells out what an update actually does: a new version can change effect defaults, so a project you already tuned may feel different afterwards, and any local edits inside `addons/juicee/` are overwritten. Saved `.tres` sequences and graphs, and the code that calls Juicee, are left alone.
+
+### Fixed
+
+- **Clicking ✎ Edit on an effect card crashed the editor** (#5, thanks @MileyHollenberg). `edit_resource` rebuilds the inspector, which freed the very button still emitting its `pressed` signal; the handler now runs deferred. The same report surfaced that hovering an inspector effect card logged a type error instead of showing the info panel (the hover call passed a Rect2 where the panel expects the card Control), so inspector cards never had the live hover preview the graph blocks have. They do now.
+- **Vector2 fields in the graph editor rounded to whole numbers** (#6, thanks @MileyHollenberg). The x/y spin boxes in the properties panel had a step of 1.0, so a target scale of 1.25 snapped to 1. Step is 0.01 now.
+- **Flash to plain white was a visual no-op.** `JuiceeFlashEffect` tweens `modulate` toward `flash_color`, and an untinted sprite already sits at white, so the default flash changed nothing on screen. Flashes now over-brighten via a new `boost` multiplier (default `2.0`, modulate goes past 1.0); set `boost = 1.0` for the old plain-tint behavior.
+
 ## [1.2.0] — 2026-06-26
 
 Four new effects, a more browsable graph palette, and a big bug-fix pass over all the effects. Going through them surfaced a family of bugs where "leave it changed" / "hold it on" options were getting reverted anyway, plus a `stop()` gap that left audio buses and screen overlays stuck on. **Effect count: 90 → 94.**

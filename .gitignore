@@ -23,6 +23,7 @@ icon.svg.import
 
 # Internal working files (roadmap, notes, scratch)
 /temp/
+/.planer/
 
 # System / IDE
 .DS_Store

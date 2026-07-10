@@ -4,11 +4,11 @@
 
 # 🧃 Juicee
 
-**Game-feel effects for Godot 4 — 94 effects, a visual graph editor, a custom inspector, and a one-line API. Free & MIT.**
+**Game-feel effects for Godot 4 — 98 effects, a visual graph editor, a custom inspector, and a one-line API. Free & MIT.**
 
 [![Godot 4.3+](https://img.shields.io/badge/Godot-4.3%2B-blue)](https://godotengine.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Effects: 94](https://img.shields.io/badge/effects-94-orange)](#whats-inside)
+[![Effects: 98](https://img.shields.io/badge/effects-98-orange)](#whats-inside)
 
 ## 🎬 Demo
 
@@ -73,7 +73,7 @@ Requires **Godot 4.3+** (uses the `@experimental` annotation). Works in all thre
 
 ### Updating
 
-Godot has no built-in addon updater. Click **↑ Update** in the JuiceeGraph toolbar — it hits the GitHub releases API, shows the latest release notes, and (on confirmation) downloads + extracts the new archive over `addons/juicee/`. Restart the editor afterwards.
+Godot has no built-in addon updater. Click **↑ Update** in the JuiceeGraph toolbar — it hits the GitHub releases API and shows the latest release notes. A second dialog spells out what the update replaces (the addon folder, including any local edits to it) and what it leaves alone (your sequences, graphs and code) before it downloads + extracts the archive over `addons/juicee/`. Restart the editor afterwards.
 
 ### A note on previewing shader effects
 
@@ -105,7 +105,7 @@ func _on_hit(): juicee.play()
 
 1. Add a `JuiceePlayer` node to your scene.
 2. Click it in the scene tree.
-3. The custom Inspector shows an "**+ Add Effect**" dropdown with all 94 effects.
+3. The custom Inspector shows an "**+ Add Effect**" dropdown with all 98 effects.
 4. Pick effects, tweak sliders, click **▶ Preview Effect**.
 5. Call `juicee.play()` from code.
 
@@ -135,20 +135,20 @@ Requires the .NET build of Godot with the plugin enabled. See [`docs/csharp.md`]
 
 ## What's inside
 
-**94 effects** in 8 categories + 12 drop-in presets + built-in updater:
+**98 effects** in 8 categories + 12 drop-in presets + built-in updater:
 
 | Category | Count | Effects |
 |---|---|---|
-| **Screen** | 18 | Chromatic, Vignette, Blur, Pixelate, Glitch, Color Grade, Screen Tint, Screen Wipe, Bloom, Tonemap, Shockwave, Cinematic Bars, Scan Lines, **Speed Lines** ✨, Film Grain, Radial Blur, Lens Distortion, Depth of Field |
+| **Screen** | 18 | Chromatic, Vignette, Blur, Pixelate, Glitch, Color Grade, Screen Tint, Screen Wipe, Bloom, Tonemap, Shockwave, Cinematic Bars, Scan Lines, Speed Lines, Film Grain, Radial Blur, Lens Distortion, Depth of Field |
 | **Camera** | 9 | Shake (2D / 3D), Zoom, FOV 3D, Camera Follow, Directional Shake, Camera Bob, Zoom Pulse, Camera Rotation (Dutch Tilt) |
-| **Object** | 36 | Flash, Modulate, Bounce, Jiggle Physics, Position (2D / 3D), Rotation (2D / 3D), Trail, Burst, Confetti, Light Flash, Spring, Ambient Flash, Strobe Light, Recoil, Outline, Color Cycle, Spin, Wiggle, Sprite Bob, Pop In, Shake Control, Pulse, Shader Parameter, Flicker, Scale To, Particle Control, Light 3D Flash, Material 3D, Fade, Flip, Instantiate, Size Delta, **Impact Ring** ✨, **Sway** ✨ |
-| **Text** | 6 | Damage Number (with crit), Floating Text, Button Punch, Typewriter, Number Count, Text Wobble |
-| **Time** | 4 | Hit Stop, Time Scale Ramp, Delay, Freeze Frame |
-| **Audio** | 7 | Sound, Music Duck, Rumble, Reverb, Pitch Shift, **Low-Pass (Muffle)** ✨, Audio Source 3D |
-| **Physics** | 2 | Impulse (RigidBody2D), Add Force (2D / 3D) |
+| **Object** | 36 | Flash, Modulate, Bounce, Jiggle Physics, Position (2D / 3D), Rotation (2D / 3D), Trail, Burst, Confetti, Light Flash, Spring, Ambient Flash, Strobe Light, Recoil, Outline, Color Cycle, Spin, Wiggle, Sprite Bob, Pop In, Shake Control, Pulse, Shader Parameter, Flicker, Scale To, Particle Control, Light 3D Flash, Material 3D, Fade, Flip, Instantiate, Size Delta, Impact Ring, Sway |
+| **Text** | 7 | Damage Number (with crit), Floating Text, Button Punch, Typewriter, Number Count, Text Wobble, **Text Scramble** ✨ |
+| **Time** | 5 | Hit Stop, Time Scale Ramp, Delay, Freeze Frame, **Stutter** ✨ |
+| **Audio** | 8 | Sound, Music Duck, Rumble, Reverb, Pitch Shift, Low-Pass (Muffle), Audio Source 3D, **Distortion** ✨ |
+| **Physics** | 3 | Impulse (RigidBody2D), Add Force (2D / 3D), **Knockback** ✨ |
 | **Flow** | 12 | Sequence (nested), Property Tween, Animation Player, Set Active, Chain, Beat Sync, Wait For Input, Emit Signal, Debug Log, Animation Tree, Set Property, Auto Destruct |
 
-✨ = new in 1.2.0
+✨ = new in 1.3.0
 
 ### Built-in drop-in presets (one-line API)
 
@@ -225,7 +225,7 @@ Effects access via `_runtime_params.get("key", default)`.
 | Doc | What's in it |
 |---|---|
 | [`docs/api-reference.md`](docs/api-reference.md) | Full API for every core class: JuiceeEffect, JuiceeSequence, JuiceePlayer, JuiceeStateStack, JuiceeAccessibility, JuiceeBeatClock, JuiceeGraphPlayer |
-| [`docs/effects-reference.md`](docs/effects-reference.md) | All 94 effects with every `@export` parameter documented |
+| [`docs/effects-reference.md`](docs/effects-reference.md) | All 98 effects with every `@export` parameter documented |
 | [`docs/singleton-api.md`](docs/singleton-api.md) | Full `Juicee.*` singleton method listing with signatures |
 | [`docs/csharp.md`](docs/csharp.md) | Using the entire Juicee API from C# / .NET projects |
 | [`docs/procedural-sfx.md`](docs/procedural-sfx.md) | Procedural sound effects (sfxr, _experimental_) — synthesize retro SFX with zero audio assets |

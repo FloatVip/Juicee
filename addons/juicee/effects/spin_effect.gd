@@ -14,6 +14,9 @@ extends JuiceeEffect
 @export var restore_on_end: bool = false
 ## Duration of the snap-back tween (only used when restore_on_end = true).
 @export_range(0.05, 1.0, 0.05) var restore_duration: float = 0.15
+## Start fast and decelerate into the stop, like a coin settling, instead of spinning
+## at constant speed and stopping dead.
+@export var ease_out: bool = false
 
 func get_category_color() -> Color: return Color(0.22, 0.78, 0.45)
 func get_category_name() -> String: return "Object"
@@ -30,8 +33,11 @@ func _apply(context: Node, intensity_mult: float) -> void:
 	var tree := context.get_tree()
 
 	var tween := _track(target.create_tween())
-	tween.tween_property(target, "rotation", start_rot + total_rot, duration)\
-		.set_trans(Tween.TRANS_LINEAR)
+	var step := tween.tween_property(target, "rotation", start_rot + total_rot, duration)
+	if ease_out:
+		step.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	else:
+		step.set_trans(Tween.TRANS_LINEAR)
 	await tween.finished
 
 	if restore_on_end and not _cancelled:

@@ -275,9 +275,11 @@ const EFFECT_DIMENSIONS: Dictionary = {
 	"typewriter_effect":       ["2d"],
 	"number_count_effect":     ["2d"],
 	"text_wobble_effect":      ["2d"],
+	"text_scramble_effect":    ["2d"],
 	# Time — engine-level, works in any scene.
 	"hit_stop_effect":         ["2d","3d"],
 	"time_scale_ramp_effect":  ["2d","3d"],
+	"stutter_effect":          ["2d","3d"],
 	"delay_effect":            ["2d","3d"],
 	# Audio / haptics — bus-level, scene-independent.
 	"sound_effect":            ["2d","3d"],
@@ -286,8 +288,10 @@ const EFFECT_DIMENSIONS: Dictionary = {
 	"reverb_effect":           ["2d","3d"],
 	"pitch_shift_effect":      ["2d","3d"],
 	"low_pass_effect":         ["2d","3d"],
+	"distortion_effect":       ["2d","3d"],
 	# Physics
 	"impulse_effect":          ["2d"],
+	"knockback_effect":        ["2d"],
 	# Flow — generic composition.
 	"animation_player_effect": ["2d","3d"],
 	"set_active_effect":       ["2d","3d"],
@@ -1673,7 +1677,8 @@ func _build_vec2_widget(effect: JuiceeEffect, prop_name: String) -> Control:
 	lbl_x.add_theme_font_size_override("font_size", int(11 * EDSCALE))
 	hbox.add_child(lbl_x)
 	var spin_x := SpinBox.new()
-	spin_x.min_value = -99999.0; spin_x.max_value = 99999.0; spin_x.step = 1.0; spin_x.value = val.x
+	# step 0.01, not 1.0: scale-like vectors need decimals (issue #6)
+	spin_x.min_value = -99999.0; spin_x.max_value = 99999.0; spin_x.step = 0.01; spin_x.value = val.x
 	spin_x.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spin_x.value_changed.connect(func(v: float) -> void:
 		effect.set(prop_name, Vector2(v, (effect.get(prop_name) as Vector2).y))
@@ -1686,7 +1691,7 @@ func _build_vec2_widget(effect: JuiceeEffect, prop_name: String) -> Control:
 	lbl_y.add_theme_font_size_override("font_size", int(11 * EDSCALE))
 	hbox.add_child(lbl_y)
 	var spin_y := SpinBox.new()
-	spin_y.min_value = -99999.0; spin_y.max_value = 99999.0; spin_y.step = 1.0; spin_y.value = val.y
+	spin_y.min_value = -99999.0; spin_y.max_value = 99999.0; spin_y.step = 0.01; spin_y.value = val.y
 	spin_y.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spin_y.value_changed.connect(func(v: float) -> void:
 		effect.set(prop_name, Vector2((effect.get(prop_name) as Vector2).x, v))
@@ -2590,6 +2595,8 @@ func _zoom_to_fit() -> void:
 var _updater: JuiceeUpdater
 var _update_dialog: ConfirmationDialog
 var _checking_label: Label
+var _update_warn_dialog: ConfirmationDialog
+var _update_warn_label: RichTextLabel
 
 func _ensure_updater() -> void:
 	if _updater:
@@ -2641,10 +2648,43 @@ func _on_update_check_completed(latest: String, current: String, release_data: D
 	_checking_label.text = text
 	for sig_dict in _update_dialog.confirmed.get_connections():
 		_update_dialog.confirmed.disconnect(sig_dict.callable)
-	_update_dialog.ok_button_text = "Update Now"
+	_update_dialog.ok_button_text = "Continue"
 	_update_dialog.get_cancel_button().visible = true
-	_update_dialog.confirmed.connect(_updater.download_and_install.bind(release_data), CONNECT_ONE_SHOT)
+	_update_dialog.confirmed.connect(_confirm_update.bind(latest, release_data), CONNECT_ONE_SHOT)
 	_update_dialog.popup_centered()
+
+## Second gate before an update actually overwrites addons/juicee/. A new version
+## can change effect defaults, so a project that looked right on the old version
+## can feel different afterwards. Worth one deliberate click.
+func _confirm_update(latest: String, release_data: Dictionary) -> void:
+	if not _update_warn_dialog:
+		_update_warn_dialog = ConfirmationDialog.new()
+		_update_warn_dialog.title = "Before you update"
+		add_child(_update_warn_dialog)
+		_update_warn_label = RichTextLabel.new()
+		_update_warn_label.bbcode_enabled = true
+		_update_warn_label.fit_content = true
+		_update_warn_label.custom_minimum_size = Vector2(440, 0) * EDSCALE
+		_update_warn_dialog.add_child(_update_warn_label)
+
+	_update_warn_label.text = (
+		"[b]This overwrites [code]addons/juicee/[/code] with v%s.[/b]\n\n"
+		+ "A new version can add effect parameters and change their defaults, so effects "
+		+ "you already tuned may look or feel different afterwards. Check the release notes "
+		+ "for anything marked as a behavior change.\n\n"
+		+ "Your saved sequences and graphs ([code].tres[/code]) are left alone, and so is any "
+		+ "code that calls Juicee. Only the addon folder is replaced.\n\n"
+		+ "[color=#b0b0b0]Commit or back up your project first if you have local edits inside "
+		+ "[code]addons/juicee/[/code], they will be lost.[/color]"
+	) % latest
+
+	for sig_dict in _update_warn_dialog.confirmed.get_connections():
+		_update_warn_dialog.confirmed.disconnect(sig_dict.callable)
+	_update_warn_dialog.ok_button_text = "Update Now"
+	_update_warn_dialog.get_cancel_button().text = "Cancel"
+	_update_warn_dialog.confirmed.connect(
+		_updater.download_and_install.bind(release_data), CONNECT_ONE_SHOT)
+	_update_warn_dialog.popup_centered()
 
 func _on_update_check_failed(message: String) -> void:
 	_show_update_status("Could not check for updates.\n\n%s" % message)
